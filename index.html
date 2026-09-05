@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HospitaLink B2B | Enterprise Hospitality Resource Exchange</title>
+  <meta name="description" content="Enterprise B2B Resource Sharing & Asset Exchange for Hotels, Caterers, Venues, and Event Production teams.">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Lucide Icons via unpkg -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- ================= Site Header & Navigation ================= -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav-inner">
+        <!-- Brand Insignia -->
+        <a href="#" class="brand-group" id="brand-link">
+          <div class="brand-logo-icon">
+            <i data-lucide="layers"></i>
+          </div>
+          <div class="brand-title-wrap">
+            <div class="brand-name">
+              <span>HospitaLink</span>
+              <span class="brand-badge">B2B Exchange</span>
+            </div>
+            <span class="brand-subtitle">Commercial Asset Sharing Network</span>
+          </div>
+        </a>
+
+        <!-- View Mode Switcher Pill -->
+        <div class="nav-center">
+          <div class="view-switch-pill" role="tablist" aria-label="View Mode">
+            <button class="view-btn active" id="btn-view-seeker" role="tab" aria-selected="true">
+              <i data-lucide="search" style="width: 1rem; height: 1rem;"></i>
+              <span>Seeker Marketplace</span>
+            </button>
+            <button class="view-btn" id="btn-view-provider" role="tab" aria-selected="false">
+              <i data-lucide="layout-dashboard" style="width: 1rem; height: 1rem;"></i>
+              <span>Provider Dashboard</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation Actions Right -->
+        <div class="nav-actions">
+          <!-- Theme Toggle Button -->
+          <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle Light / Dark Mode" aria-label="Toggle theme">
+            <i data-lucide="moon" id="theme-icon"></i>
+          </button>
+
+          <!-- Auth Status Container -->
+          <div id="auth-actions-container">
+            <button class="auth-trigger-btn" id="btn-open-auth">
+              <i data-lucide="building" style="width: 1rem; height: 1rem;"></i>
+              <span>Enterprise Login</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= Hero & Live Metric Bar ================= -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-headline-wrap">
+          <div class="hero-pill-tag">
+            <i data-lucide="shield-check" style="width: 0.9rem; height: 0.9rem;"></i>
+            <span>Verified Commercial Fleet & Equipment Grid</span>
+          </div>
+          <h1 class="hero-title">
+            Enterprise Hospitality <span class="hero-highlight">Resource Exchange</span>
+          </h1>
+          <p class="hero-desc">
+            Instantly borrow, rent, or monetize high-capacity commercial kitchen assets, luxury banquet setups, cold-chain logistics vans, and event staging equipment across Mumbai and Thane metropolitan hubs.
+          </p>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-icon-box metric-icon-blue">
+              <i data-lucide="box"></i>
+            </div>
+            <div class="metric-data">
+              <span class="metric-value" id="metric-listings-count">148+ Assets</span>
+              <span class="metric-label">Active Listings Across 5 Hubs</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-box metric-icon-green">
+              <i data-lucide="badge-check"></i>
+            </div>
+            <div class="metric-data">
+              <span class="metric-value">52 Partners</span>
+              <span class="metric-label">Verified Hotels & Caterers</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-box metric-icon-purple">
+              <i data-lucide="trending-up"></i>
+            </div>
+            <div class="metric-data">
+              <span class="metric-value">₹28.4 Lakhs</span>
+              <span class="metric-label">Capital Expenditure Saved</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-box metric-icon-amber">
+              <i data-lucide="zap"></i>
+            </div>
+            <div class="metric-data">
+              <span class="metric-value">&lt; 4 Hours</span>
+              <span class="metric-label">Avg Direct Site Dispatch</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Seeker Marketplace View ================= -->
+  <main class="view-container active" id="view-seeker">
+    <div class="container">
+      
+      <!-- Multi-Filter & Search Toolbar -->
+      <div class="marketplace-toolbar">
+        <div class="search-filter-row">
+          <!-- Real-time Search Input -->
+          <div class="search-input-wrapper">
+            <i data-lucide="search" class="search-icon" style="width: 1.1rem; height: 1.1rem;"></i>
+            <input 
+              type="text" 
+              class="search-input" 
+              id="search-input" 
+              placeholder="Search assets (e.g. Combi Oven, Reefer Van, Banquet Chairs, DG Set)..."
+            >
+          </div>
+
+          <!-- Store / Physical Hub Filter -->
+          <select class="filter-select" id="filter-store" aria-label="Filter by Store Hub">
+            <option value="all">All Regional Store Hubs</option>
+            <!-- Injected dynamically from STORE_HUBS -->
+          </select>
+
+          <!-- Fulfillment Mode Filter -->
+          <select class="filter-select" id="filter-fulfillment" aria-label="Filter by Fulfillment Mode">
+            <option value="all">All Fulfillment Modes</option>
+            <option value="Direct Site Delivery">Direct Site Delivery</option>
+            <option value="In-Store Pickup">In-Store Pickup</option>
+          </select>
+
+          <!-- Sort Selector -->
+          <select class="filter-select" id="sort-select" aria-label="Sort listings">
+            <option value="featured">Featured / Recommended</option>
+            <option value="price-asc">Daily Rate: Low to High</option>
+            <option value="price-desc">Daily Rate: High to Low</option>
+            <option value="rating">Highest Partner Rating</option>
+          </select>
+
+          <!-- Reset Filter Button -->
+          <button class="reset-filters-btn" id="btn-reset-filters">
+            Reset
+          </button>
+        </div>
+
+        <!-- Category Pills Bar -->
+        <div class="category-pills-bar" id="category-pills-container">
+          <!-- Injected dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Results Meta Information -->
+      <div class="results-meta-bar">
+        <span id="results-count-text">Showing <strong class="results-count">8</strong> commercial assets</span>
+        <span class="results-location-info">
+          <i data-lucide="map-pin" style="width: 0.85rem; height: 0.85rem; vertical-align: middle;"></i>
+          Mumbai Metropolitan Region (MMR)
+        </span>
+      </div>
+
+      <!-- Responsive Asset Listing Grid -->
+      <div class="listings-grid" id="listings-grid">
+        <!-- Rendered by app.js -->
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= Provider Dashboard View ================= -->
+  <section class="view-container" id="view-provider">
+    <div class="container">
+      
+      <!-- Provider KPI Metric Cards -->
+      <div class="provider-stats-grid">
+        <div class="provider-stat-card">
+          <div class="stat-header">
+            <span>TOTAL REVENUE GENERATED</span>
+            <i data-lucide="indian-rupee" style="width: 1rem; height: 1rem; color: var(--accent-emerald);"></i>
+          </div>
+          <span class="stat-val" id="prov-stat-revenue">₹3,84,500</span>
+          <span class="stat-trend positive">
+            <i data-lucide="arrow-up-right" style="width: 0.9rem; height: 0.9rem;"></i>
+            +18.2% vs previous quarter
+          </span>
+        </div>
+
+        <div class="provider-stat-card">
+          <div class="stat-header">
+            <span>PENDING BOOKING REQUESTS</span>
+            <i data-lucide="clock" style="width: 1rem; height: 1rem; color: var(--accent-amber);"></i>
+          </div>
+          <span class="stat-val" id="prov-stat-pending">2 Requests</span>
+          <span class="stat-trend neutral">
+            <i data-lucide="alert-circle" style="width: 0.9rem; height: 0.9rem;"></i>
+            Awaiting response
+          </span>
+        </div>
+
+        <div class="provider-stat-card">
+          <div class="stat-header">
+            <span>ACTIVE RENTALS DEPLOYED</span>
+            <i data-lucide="truck" style="width: 1rem; height: 1rem; color: var(--accent-primary);"></i>
+          </div>
+          <span class="stat-val" id="prov-stat-active">4 Units</span>
+          <span class="stat-trend positive">
+            <i data-lucide="check" style="width: 0.9rem; height: 0.9rem;"></i>
+            On-site at partner venues
+          </span>
+        </div>
+
+        <div class="provider-stat-card">
+          <div class="stat-header">
+            <span>ASSET FLEET UTILIZATION</span>
+            <i data-lucide="activity" style="width: 1rem; height: 1rem; color: var(--accent-purple);"></i>
+          </div>
+          <span class="stat-val" id="prov-stat-util">86.4%</span>
+          <span class="stat-trend positive">
+            <i data-lucide="trending-up" style="width: 0.9rem; height: 0.9rem;"></i>
+            Optimal allocation
+          </span>
+        </div>
+      </div>
+
+      <!-- Dashboard Action Bar -->
+      <div class="dashboard-actions-bar">
+        <div class="section-title-wrap">
+          <h2>Enterprise Rental Requests Management</h2>
+          <p>Review, accept, negotiate, or decline incoming B2B rental bookings in real time.</p>
+        </div>
+        <button class="btn-primary-action" id="btn-open-list-modal">
+          <i data-lucide="plus-circle" style="width: 1.1rem; height: 1.1rem;"></i>
+          <span>List New Asset</span>
+        </button>
+      </div>
+
+      <!-- Rental Requests Enterprise Table -->
+      <div class="table-card">
+        <div class="table-header-bar">
+          <span class="table-title">Incoming Rental Booking Pipeline</span>
+          <span class="brand-badge" id="requests-counter-badge">4 Total Requests</span>
+        </div>
+        <div class="table-responsive">
+          <table class="enterprise-table" id="requests-table">
+            <thead>
+              <tr>
+                <th>Request ID</th>
+                <th>Asset Title</th>
+                <th>Requester Business</th>
+                <th>Duration &amp; Dates</th>
+                <th>Contract Value</th>
+                <th>Fulfillment</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="requests-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Provider Registered Assets List -->
+      <div class="section-title-wrap" style="margin-bottom: 1.25rem;">
+        <h2>Your Registered Inventory Fleet</h2>
+        <p>Assets listed by your organization for inter-hotel and catering sharing.</p>
+      </div>
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="enterprise-table">
+            <thead>
+              <tr>
+                <th>Asset Code</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Store Hub Location</th>
+                <th>GPS Coordinates</th>
+                <th>Fulfillment</th>
+                <th>Daily Rate</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="provider-inventory-table-body">
+              <!-- Dynamically populated from inventoryData -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= Site Footer ================= -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div>
+          <strong>HospitaLink B2B Exchange</strong> • Enterprise Hospitality Resource Network.
+          <div>MMR Operational Coverage:</div>
+        </div>
+        <div class="footer-hub-chips" id="footer-hubs">
+          <!-- Populated from STORE_HUBS -->
+        </div>
+        <div>
+          &copy; 2026 HospitaLink Systems. All rights reserved.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 1. Authentication Modal (Login / Sign Up) -->
+  <div class="modal-backdrop" id="auth-modal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="auth-modal-title">Enterprise Portal Access</div>
+        <button class="modal-close-btn" id="btn-close-auth" aria-label="Close modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Auth Tabs -->
+        <div class="modal-tabs">
+          <button class="modal-tab-btn active" id="tab-auth-login">Sign In</button>
+          <button class="modal-tab-btn" id="tab-auth-register">Register Organization</button>
+        </div>
+
+        <!-- 1-Click Quick Demo Credentials -->
+        <div class="demo-credentials-box">
+          <span class="demo-title">Quick Demo Login (Hackathon Express)</span>
+          <div class="demo-btn-group">
+            <button class="demo-quick-btn" data-demo="0">Grand Palace Hotel</button>
+            <button class="demo-quick-btn" data-demo="1">Apex Culinary &amp; Banquet</button>
+            <button class="demo-quick-btn" data-demo="2">Royal Zenith Events</button>
+          </div>
+        </div>
+
+        <!-- Login Form Container -->
+        <form id="form-login" class="form-group" style="display: flex;">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Enterprise Work Email</label>
+            <input type="email" id="login-email" class="form-input" placeholder="e.g. procurement@grandpalace.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <input type="password" id="login-password" class="form-input" placeholder="••••••••••••" required value="demo-password">
+          </div>
+          <button type="submit" class="btn-primary-action" style="margin-top: 0.5rem; justify-content: center;">
+            Sign In to Enterprise Portal
+          </button>
+        </form>
+
+        <!-- Register Form Container -->
+        <form id="form-register" class="form-group" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="reg-biz-name">Registered Business Name</label>
+            <input type="text" id="reg-biz-name" class="form-input" placeholder="e.g. Imperial Banquets & Caterers Ltd" required>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="reg-biz-type">Hospitality Business Type</label>
+              <select id="reg-biz-type" class="form-select" required>
+                <!-- Populated dynamically from BUSINESS_TYPES -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-hub">Primary Hub Location</label>
+              <select id="reg-hub" class="form-select" required>
+                <!-- Populated dynamically from STORE_HUBS -->
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-email">Work Email</label>
+            <input type="email" id="reg-email" class="form-input" placeholder="e.g. fleet@imperialbanquets.in" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-password">Password</label>
+            <input type="password" id="reg-password" class="form-input" placeholder="Create strong password" required minlength="6">
+          </div>
+          <button type="submit" class="btn-primary-action" style="margin-top: 0.5rem; justify-content: center;">
+            Complete Enterprise Registration
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Rental Request Modal with Live Date & Total Calculator -->
+  <div class="modal-backdrop" id="rental-modal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Commercial Rental Request</div>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Instant B2B Contract Calculation</span>
+        </div>
+        <button class="modal-close-btn" id="btn-close-rental" aria-label="Close modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <form id="form-rental" class="modal-body">
+        <input type="hidden" id="rental-asset-id">
+
+        <!-- Selected Asset Info Card -->
+        <div id="rental-asset-summary" style="padding: 0.85rem; background-color: var(--bg-secondary); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; gap: 0.85rem; align-items: center;">
+          <!-- Injected on trigger -->
+        </div>
+
+        <!-- Date Range Inputs -->
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="rental-start-date">Start Date</label>
+            <input type="date" id="rental-start-date" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="rental-end-date">End Date</label>
+            <input type="date" id="rental-end-date" class="form-input" required>
+          </div>
+        </div>
+
+        <!-- Fulfillment & Site Logistics -->
+        <div class="form-group">
+          <label class="form-label" for="rental-delivery-address">Event Site / Delivery Address</label>
+          <input type="text" id="rental-delivery-address" class="form-input" placeholder="e.g. Grand Ballroom, JW Marriott Sahar, Mumbai" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="rental-notes">Operational Notes / Special Requirements</label>
+          <textarea id="rental-notes" class="form-textarea" placeholder="e.g. 3-Phase power available at site. Early 6:00 AM delivery needed."></textarea>
+        </div>
+
+        <!-- Live Instant Calculation Card -->
+        <div class="calc-summary-card">
+          <div class="calc-row">
+            <span>Rental Duration:</span>
+            <strong id="calc-duration">1 Day</strong>
+          </div>
+          <div class="calc-row">
+            <span>Daily Rate:</span>
+            <span id="calc-daily-rate">₹0 / day</span>
+          </div>
+          <div class="calc-row">
+            <span>Base Rental Subtotal:</span>
+            <strong id="calc-subtotal">₹0</strong>
+          </div>
+          <div class="calc-row">
+            <span>B2B Platform Logistics &amp; Transit Insurance (5%):</span>
+            <span id="calc-platform-fee">₹0</span>
+          </div>
+          <div class="calc-row">
+            <span>Refundable Security Deposit:</span>
+            <span id="calc-deposit" class="security-deposit-badge">₹0 (Refundable)</span>
+          </div>
+          <div class="calc-row grand-total">
+            <span>Estimated Total Contract:</span>
+            <span id="calc-grand-total" style="color: var(--accent-primary);">₹0</span>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 0; background: transparent; border: none; margin-top: 0.5rem;">
+          <button type="button" class="reset-filters-btn" id="btn-cancel-rental">Cancel</button>
+          <button type="submit" class="btn-primary-action" id="btn-submit-rental">
+            <i data-lucide="check-circle-2" style="width: 1rem; height: 1rem;"></i>
+            <span>Confirm &amp; Transmit Request</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. List New Asset Modal (Provider View) -->
+  <div class="modal-backdrop" id="list-asset-modal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">List Commercial Asset for Exchange</div>
+        <button class="modal-close-btn" id="btn-close-list" aria-label="Close modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <form id="form-list-asset" class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="asset-name">Asset Title &amp; Model</label>
+          <input type="text" id="asset-name" class="form-input" placeholder="e.g. Convotherm 20-Tray Commercial Steamer" required>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="asset-category">Category</label>
+            <select id="asset-category" class="form-select" required>
+              <option value="Kitchens">Kitchen Equipment</option>
+              <option value="Banquets">Banquet &amp; Staging</option>
+              <option value="Vehicles">Logistics &amp; Vans</option>
+              <option value="Furniture">Furniture &amp; Decor</option>
+              <option value="AudioVisual">Sound &amp; Lighting</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="asset-store">Store Location Hub</label>
+            <select id="asset-store" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="asset-rate">Daily Rental Rate (₹)</label>
+            <input type="number" id="asset-rate" class="form-input" placeholder="e.g. 5000" min="100" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="asset-deposit">Refundable Deposit (₹)</label>
+            <input type="number" id="asset-deposit" class="form-input" placeholder="e.g. 15000" min="500" required>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="asset-fulfillment">Fulfillment Mode</label>
+            <select id="asset-fulfillment" class="form-select" required>
+              <option value="Direct Site Delivery">Direct Site Delivery</option>
+              <option value="In-Store Pickup">In-Store Pickup</option>
+              <option value="Both Available">Both Available</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="asset-status">Initial Status</label>
+            <select id="asset-status" class="form-select" required>
+              <option value="Available">Available Immediately</option>
+              <option value="Reserved">Reserved for Inspection</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="asset-specs">Technical Specifications &amp; Capacity</label>
+          <input type="text" id="asset-specs" class="form-input" placeholder="e.g. 3-Phase 415V • 20 Tray Capacity • SS 304 Grade" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="asset-desc">Full Equipment Description</label>
+          <textarea id="asset-desc" class="form-textarea" placeholder="Describe asset condition, included accessories, operation instructions..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="asset-image">Image URL (or select preset)</label>
+          <input type="url" id="asset-image" class="form-input" placeholder="https://images.unsplash.com/..." required value="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=80">
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; flex-wrap: wrap;">
+            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=80">Kitchen Preset</button>
+            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80">Banquet Preset</button>
+            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=900&q=80">Vehicle Preset</button>
+            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=900&q=80">Furniture Preset</button>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 0; background: transparent; border: none; margin-top: 0.5rem;">
+          <button type="button" class="reset-filters-btn" id="btn-cancel-list">Cancel</button>
+          <button type="submit" class="btn-primary-action">
+            <i data-lucide="upload" style="width: 1rem; height: 1rem;"></i>
+            <span>Publish to Marketplace</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Quick Specs & Location Pin Modal -->
+  <div class="modal-backdrop" id="quickview-modal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="qv-title">Asset Specifications &amp; Hub Details</div>
+        <button class="modal-close-btn" id="btn-close-qv" aria-label="Close modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="qv-content">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="reset-filters-btn" id="btn-dismiss-qv">Close</button>
+        <button type="button" class="btn-primary-action" id="qv-btn-request">
+          Request Rental
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Negotiation Counter-Offer Modal -->
+  <div class="modal-backdrop" id="negotiate-modal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Negotiate Commercial Terms</div>
+          <span style="font-size: 0.78rem; color: var(--text-muted);" id="neg-req-id">Counter-offer Proposal</span>
+        </div>
+        <button class="modal-close-btn" id="btn-close-neg" aria-label="Close modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <form id="form-negotiate" class="modal-body">
+        <input type="hidden" id="neg-target-id">
+        <div id="neg-details-box" style="padding: 0.85rem; background-color: var(--bg-secondary); border-radius: var(--radius-md); font-size: 0.85rem;">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="neg-counter-price">Counter-Offer Total Amount (₹)</label>
+          <input type="number" id="neg-counter-price" class="form-input" placeholder="e.g. 21000" min="500" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="neg-counter-message">Counter-Offer Rationale / Terms</label>
+          <textarea id="neg-counter-message" class="form-textarea" placeholder="e.g. We can approve ₹21,000 if pickup is scheduled after 2:00 PM." required></textarea>
+        </div>
+
+        <div class="modal-footer" style="padding: 0; background: transparent; border: none; margin-top: 0.5rem;">
+          <button type="button" class="reset-filters-btn" id="btn-cancel-neg">Cancel</button>
+          <button type="submit" class="btn-primary-action" style="background-color: var(--accent-purple);">
+            <i data-lucide="send" style="width: 1rem; height: 1rem;"></i>
+            <span>Send Counter-Offer</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notification Stack -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- Universal Application Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -836,93 +836,95 @@
         const imgUrl = getSafeImageUrl(asset.image, asset.category);
         const distanceText = `${asset._distanceKm || 6.5} km from BKC`;
         const instantBadge = asset.instantDispatchAvailable
-          ? `<span class="instant-dispatch-badge"><i data-lucide="zap" style="width:0.75rem;height:0.75rem;"></i>⚡ 30–60 Min Dispatch</span>`
+          ? `<span class="instant-dispatch-badge" style="position: absolute; bottom: 8px; left: 8px;"><i data-lucide="zap" style="width:0.75rem;height:0.75rem;"></i>⚡ 30–60 Min Dispatch</span>`
           : '';
 
         return `
-          <div class="listing-card ${!isAvailable ? 'card-booked' : ''}" data-id="${asset.id}">
+          <article class="asset-card ${!isAvailable ? 'is-booked' : ''}" data-id="${asset.id}">
             <!-- Media Container -->
-            <div class="card-media-wrap">
+            <div class="card-media">
               <img 
                 src="${imgUrl}" 
                 alt="${asset.title}" 
-                class="card-img" 
                 loading="lazy"
                 onerror="this.src='https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80'"
               >
-              <div class="card-badges-top">
-                <span class="category-badge-chip">${asset.category}</span>
-                <span class="status-badge ${isAvailable ? 'approved' : 'pending'}">
-                  ${isAvailable ? 'Available' : 'Booked'}
-                </span>
-              </div>
-              <div class="card-badges-bottom">
-                ${instantBadge}
-                <span class="proximity-tag">
-                  <i data-lucide="map-pin" style="width:0.75rem;height:0.75rem;"></i>
-                  ${distanceText}
-                </span>
-              </div>
+              <span class="card-category-badge">${asset.category}</span>
+              <span class="card-status-pill ${isAvailable ? 'available' : 'booked'}">
+                ${isAvailable ? 'Available' : 'Booked'}
+              </span>
+              ${instantBadge}
             </div>
 
             <!-- Body Details -->
             <div class="card-body">
-              <h3 class="card-title" title="${asset.title}">${asset.title}</h3>
-              
-              <div class="vendor-subtext">
-                <span class="vendor-shop-name">${asset.shopName}</span>
-                <span class="vendor-type-tag">${asset.vendorType}</span>
+              <div class="card-provider-row">
+                <span class="provider-info">${asset.shopName}</span>
+                <span class="proximity-tag">📍 ${distanceText}</span>
               </div>
 
-              <div class="card-specs-row">
-                <div class="spec-item" title="${asset.location}">
-                  <i data-lucide="navigation" class="spec-icon"></i>
+              <h3 class="card-title" title="${asset.title}">${asset.title}</h3>
+
+              <div class="card-location-row">
+                <span class="store-location-badge">
+                  <i data-lucide="map-pin" style="width: 0.85rem; height: 0.85rem;"></i>
                   <span>${asset.location}</span>
-                </div>
-                <div class="spec-item">
-                  <i data-lucide="${asset.fulfillmentType === 'Site Delivery' ? 'truck' : 'store'}" class="spec-icon"></i>
-                  <span>${asset.fulfillmentType}</span>
-                </div>
+                </span>
+                <span class="fulfillment-badge ${asset.fulfillmentType === 'Site Delivery' ? 'fulfillment-delivery' : 'fulfillment-pickup'}">
+                  ${asset.fulfillmentType}
+                </span>
               </div>
 
               <!-- Pricing & Action Row -->
               <div class="card-footer">
-                <div class="card-price-wrap">
-                  <span class="price-val">₹${asset.pricePerDay.toLocaleString('en-IN')}</span>
-                  <span class="price-period">/ calendar day</span>
+                <div class="price-box">
+                  <span class="price-amount">₹${asset.pricePerDay.toLocaleString('en-IN')}</span>
+                  <span class="price-period">per calendar day</span>
                 </div>
 
-                <div class="card-btn-group">
-                  <button class="btn-quickview" data-qv-id="${asset.id}" title="Asset Specifications">
-                    <i data-lucide="eye" style="width: 0.95rem; height: 0.95rem;"></i>
+                <div class="card-actions">
+                  <button class="btn-quickview" data-qv-id="${asset.id}" title="Quick Specs & Details">
+                    <i data-lucide="eye" style="width: 1rem; height: 1rem;"></i>
                   </button>
                   <button 
-                    class="btn-request ${this.state.emergencyMode ? 'btn-emergency-book' : ''}" 
+                    class="btn-request-rent ${!isAvailable ? 'btn-booked-action' : ''}" 
                     data-book-id="${asset.id}" 
-                    ${!isAvailable ? 'disabled' : ''}
+                    data-rent="${asset.id}"
+                    style="${!isAvailable ? 'background-color: var(--accent-amber); cursor: not-allowed;' : ''}"
                   >
                     ${!isAvailable 
                       ? 'Date Locked' 
-                      : (this.state.emergencyMode ? '⚡ Instant Dispatch' : 'Reserve Asset')}
+                      : (this.state.emergencyMode ? '⚡ Instant Dispatch' : 'Request Rent')}
                   </button>
                 </div>
               </div>
             </div>
-          </div>
+          </article>
         `;
       }).join('');
 
       // Attach Card Button Handlers
       this.dom.listingsGrid.querySelectorAll('[data-qv-id]').forEach(btn => {
         btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const id = e.currentTarget.getAttribute('data-qv-id');
           this.openQuickViewModal(id);
         });
       });
 
-      this.dom.listingsGrid.querySelectorAll('[data-book-id]').forEach(btn => {
+      this.dom.listingsGrid.querySelectorAll('[data-book-id], [data-rent]').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const id = e.currentTarget.getAttribute('data-book-id');
+          e.stopPropagation();
+          const id = e.currentTarget.getAttribute('data-book-id') || e.currentTarget.getAttribute('data-rent');
+          const item = this.state.inventory.find(a => a.id === id);
+          if (item && item.availabilityStatus === 'Booked') {
+            this.showToast({
+              title: "Asset Date-Locked",
+              message: `${item.title} is already booked for these dates. Please choose an available asset.`,
+              type: "warning"
+            });
+            return;
+          }
           this.openRentalModal(id);
         });
       });
@@ -1795,6 +1797,10 @@
       if (!modalEl) return;
       modalEl.classList.add('active');
       modalEl.setAttribute('aria-hidden', 'false');
+      modalEl.style.display = 'flex';
+      modalEl.style.opacity = '1';
+      modalEl.style.visibility = 'visible';
+      modalEl.style.pointerEvents = 'auto';
       document.body.style.overflow = 'hidden';
       this.refreshIcons();
     }
@@ -1803,6 +1809,10 @@
       if (!modalEl) return;
       modalEl.classList.remove('active');
       modalEl.setAttribute('aria-hidden', 'true');
+      modalEl.style.display = 'none';
+      modalEl.style.opacity = '0';
+      modalEl.style.visibility = 'hidden';
+      modalEl.style.pointerEvents = 'none';
       document.body.style.overflow = '';
     }
 

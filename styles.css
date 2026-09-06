@@ -1265,8 +1265,11 @@ img {
 }
 
 .modal-backdrop.active {
-  opacity: 1;
-  pointer-events: auto;
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  z-index: 99999 !important;
 }
 
 .modal-dialog {
@@ -1282,10 +1285,15 @@ img {
   transition: transform var(--transition-normal);
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 100000;
 }
 
 .modal-backdrop.active .modal-dialog {
-  transform: translateY(0) scale(1);
+  display: flex !important;
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  visibility: visible !important;
 }
 
 .modal-header {

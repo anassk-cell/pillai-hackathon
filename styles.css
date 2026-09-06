@@ -715,7 +715,7 @@ img {
 .asset-card {
   background-color: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-lg);
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   display: flex;
@@ -725,7 +725,7 @@ img {
 }
 
 .asset-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   border-color: var(--card-border-hover);
   box-shadow: var(--shadow-lg);
 }
@@ -733,20 +733,23 @@ img {
 .card-media {
   position: relative;
   width: 100%;
-  height: 190px;
+  aspect-ratio: 16 / 9;
   background-color: var(--bg-secondary);
   overflow: hidden;
+  border-radius: 8px 8px 0 0;
 }
 
 .card-media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--transition-slow);
+  border-radius: 8px 8px 0 0;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: block;
 }
 
 .asset-card:hover .card-media img {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .card-category-badge {
@@ -777,7 +780,8 @@ img {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.card-status-pill.reserved {
+.card-status-pill.reserved,
+.card-status-pill.booked {
   background-color: var(--accent-amber);
 }
 

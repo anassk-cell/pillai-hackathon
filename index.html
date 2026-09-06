@@ -139,29 +139,52 @@
               type="text" 
               class="search-input" 
               id="search-input" 
-              placeholder="Search assets (e.g. Combi Oven, Reefer Van, Banquet Chairs, DG Set)..."
+              placeholder="Search by title, shop name, vendor type, or MMR location..."
             >
           </div>
 
-          <!-- Store / Physical Hub Filter -->
-          <select class="filter-select" id="filter-store" aria-label="Filter by Store Hub">
-            <option value="all">All Regional Store Hubs</option>
-            <!-- Injected dynamically from STORE_HUBS -->
+          <!-- MMR Location Filter -->
+          <select class="filter-select" id="filter-location" aria-label="Filter by MMR Location">
+            <option value="all">All MMR Locations</option>
+            <option value="Mumbai">Mumbai</option>
+            <option value="Thane">Thane</option>
+            <option value="Navi Mumbai">Navi Mumbai</option>
+            <option value="Bhiwandi">Bhiwandi</option>
+            <option value="Kalyan">Kalyan</option>
+            <option value="Dombivli">Dombivli</option>
+            <option value="Vasai">Vasai</option>
+          </select>
+
+          <!-- Category Selector Dropdown -->
+          <select class="filter-select" id="filter-category" aria-label="Filter by Category">
+            <option value="all">All Categories</option>
+            <option value="Venue">Venue (Venues &amp; Banquets)</option>
+            <option value="Commercial Kitchen">Commercial Kitchen</option>
+            <option value="Logistics Vehicle">Logistics Vehicle</option>
+            <option value="Event Equipment">Event Equipment</option>
+          </select>
+
+          <!-- Price Range Filter -->
+          <select class="filter-select" id="filter-price" aria-label="Filter by Price Range">
+            <option value="all">All Price Ranges</option>
+            <option value="under-5k">Under ₹5,000 / day</option>
+            <option value="5k-15k">₹5,000 – ₹15,000 / day</option>
+            <option value="15k-30k">₹15,000 – ₹30,000 / day</option>
+            <option value="above-30k">Above ₹30,000 / day</option>
           </select>
 
           <!-- Fulfillment Mode Filter -->
           <select class="filter-select" id="filter-fulfillment" aria-label="Filter by Fulfillment Mode">
-            <option value="all">All Fulfillment Modes</option>
-            <option value="Direct Site Delivery">Direct Site Delivery</option>
+            <option value="all">All Fulfillment</option>
             <option value="In-Store Pickup">In-Store Pickup</option>
+            <option value="Site Delivery">Site Delivery</option>
           </select>
 
           <!-- Sort Selector -->
           <select class="filter-select" id="sort-select" aria-label="Sort listings">
             <option value="featured">Featured / Recommended</option>
-            <option value="price-asc">Daily Rate: Low to High</option>
-            <option value="price-desc">Daily Rate: High to Low</option>
-            <option value="rating">Highest Partner Rating</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
           </select>
 
           <!-- Reset Filter Button -->
@@ -299,8 +322,9 @@
                 <th>Asset Code</th>
                 <th>Item Name</th>
                 <th>Category</th>
-                <th>Store Hub Location</th>
-                <th>GPS Coordinates</th>
+                <th>Shop / Warehouse</th>
+                <th>Vendor Type</th>
+                <th>MMR Location</th>
                 <th>Fulfillment</th>
                 <th>Daily Rate</th>
                 <th>Status</th>
@@ -507,76 +531,80 @@
       </div>
       <form id="form-list-asset" class="modal-body">
         <div class="form-group">
-          <label class="form-label" for="asset-name">Asset Title &amp; Model</label>
-          <input type="text" id="asset-name" class="form-input" placeholder="e.g. Convotherm 20-Tray Commercial Steamer" required>
+          <label class="form-label" for="asset-name">Asset Title</label>
+          <input type="text" id="asset-name" class="form-input" placeholder="e.g. 500-Seater Banquet & Outdoor Lawn" required>
         </div>
 
         <div class="form-row-2">
           <div class="form-group">
             <label class="form-label" for="asset-category">Category</label>
             <select id="asset-category" class="form-select" required>
-              <option value="Kitchens">Kitchen Equipment</option>
-              <option value="Banquets">Banquet &amp; Staging</option>
-              <option value="Vehicles">Logistics &amp; Vans</option>
-              <option value="Furniture">Furniture &amp; Decor</option>
-              <option value="AudioVisual">Sound &amp; Lighting</option>
+              <option value="Venue">Venue (Venues &amp; Banquets)</option>
+              <option value="Commercial Kitchen">Commercial Kitchen</option>
+              <option value="Logistics Vehicle">Logistics Vehicle</option>
+              <option value="Event Equipment">Event Equipment</option>
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="asset-store">Store Location Hub</label>
-            <select id="asset-store" class="form-select" required>
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row-2">
-          <div class="form-group">
-            <label class="form-label" for="asset-rate">Daily Rental Rate (₹)</label>
-            <input type="number" id="asset-rate" class="form-input" placeholder="e.g. 5000" min="100" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="asset-deposit">Refundable Deposit (₹)</label>
-            <input type="number" id="asset-deposit" class="form-input" placeholder="e.g. 15000" min="500" required>
-          </div>
-        </div>
-
-        <div class="form-row-2">
           <div class="form-group">
             <label class="form-label" for="asset-fulfillment">Fulfillment Mode</label>
             <select id="asset-fulfillment" class="form-select" required>
-              <option value="Direct Site Delivery">Direct Site Delivery</option>
               <option value="In-Store Pickup">In-Store Pickup</option>
-              <option value="Both Available">Both Available</option>
+              <option value="Site Delivery">Site Delivery</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="asset-shop">Shop / Warehouse Name</label>
+            <input type="text" id="asset-shop" class="form-input" placeholder="e.g. Imperial Banquets & Warehousing" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="asset-vendor-type">Vendor Type</label>
+            <input type="text" id="asset-vendor-type" class="form-input" placeholder="e.g. Venue Provider, Kitchen Facility, Fleet Owner" required>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="asset-location">MMR Location</label>
+            <select id="asset-location" class="form-select" required>
+              <option value="Lower Parel, Mumbai">Lower Parel, Mumbai</option>
+              <option value="Andheri East, Mumbai">Andheri East, Mumbai</option>
+              <option value="Dadar West, Mumbai">Dadar West, Mumbai</option>
+              <option value="Ghatkopar West, Mumbai">Ghatkopar West, Mumbai</option>
+              <option value="Majiwada, Thane">Majiwada, Thane</option>
+              <option value="Dombivli East, Thane">Dombivli East, Thane</option>
+              <option value="Kalyan West, Thane">Kalyan West, Thane</option>
+              <option value="Vashi, Navi Mumbai">Vashi, Navi Mumbai</option>
+              <option value="Panvel, Navi Mumbai">Panvel, Navi Mumbai</option>
+              <option value="Bhiwandi Industrial Hub">Bhiwandi Industrial Hub</option>
+              <option value="Anjur Phata, Bhiwandi">Anjur Phata, Bhiwandi</option>
+              <option value="Vasai East, Extended MMR">Vasai East, Extended MMR</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" for="asset-status">Initial Status</label>
-            <select id="asset-status" class="form-select" required>
-              <option value="Available">Available Immediately</option>
-              <option value="Reserved">Reserved for Inspection</option>
-            </select>
+            <label class="form-label" for="asset-rate">Daily Rental Rate (₹)</label>
+            <input type="number" id="asset-rate" class="form-input" placeholder="e.g. 25000" min="500" required>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="asset-specs">Technical Specifications &amp; Capacity</label>
-          <input type="text" id="asset-specs" class="form-input" placeholder="e.g. 3-Phase 415V • 20 Tray Capacity • SS 304 Grade" required>
+          <label class="form-label" for="asset-status">Availability Status</label>
+          <select id="asset-status" class="form-select" required>
+            <option value="Available">Available</option>
+            <option value="Booked">Booked</option>
+          </select>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="asset-desc">Full Equipment Description</label>
-          <textarea id="asset-desc" class="form-textarea" placeholder="Describe asset condition, included accessories, operation instructions..." required></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="asset-image">Image URL (or select preset)</label>
-          <input type="url" id="asset-image" class="form-input" placeholder="https://images.unsplash.com/..." required value="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=80">
+          <label class="form-label" for="asset-image">Asset Image URL</label>
+          <input type="url" id="asset-image" class="form-input" placeholder="https://images.unsplash.com/..." required value="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80">
           <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; flex-wrap: wrap;">
-            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=80">Kitchen Preset</button>
-            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80">Banquet Preset</button>
-            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=900&q=80">Vehicle Preset</button>
-            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=900&q=80">Furniture Preset</button>
+            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80">Venue Preset</button>
+            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80">Kitchen Preset</button>
+            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80">Logistics Preset</button>
+            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80">Equipment Preset</button>
           </div>
         </div>
 

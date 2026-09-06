@@ -1,296 +1,74 @@
 /**
- * B2B Hospitality Resource Exchange - Main Application Controller
- * Localized for Mumbai Metropolitan Region (MMR)
- * Universal ES script: Theme toggling, authentication, MMR location filters,
- * real-time booking calculator, and provider management dashboard.
+ * HospitaLink B2B Hospitality Resource Exchange
+ * Enterprise Controller for Mumbai Metropolitan Region (MMR)
+ * Features:
+ * - Dual-Booking Modes: Emergency 30-60 min dispatch vs. Planned advance with 20% token locking
+ * - Proximity Distance Calculation (Haversine Formula from BKC Central Depot)
+ * - 3PL Logistics Fare Simulator with 20% Round-Trip Discount
+ * - Smart Calendar Lock preventing double-booking upon token receipt
+ * - 3-Way Provider Request Handling (Accept, Reject, Real-Time Counter-Offer)
+ * - 2-Step Digital Condition Audit (Pre-Dispatch & Post-Return Photo Checklist & Escrow Settlement)
+ * - Automated Fleet Monetization & ROI Calculator with reactive range sliders
+ * - Enterprise Theme Control (Light/Dark mode) & LocalStorage Persistence
  */
 
 (function() {
   'use strict';
 
-  // EXACT DATASET AS SPECIFIED
-  let inventoryData = [
-    // 1. VENUES & BANQUETS
-    {
-      id: "mmr-01",
-      title: "500-Seater Banquet & Outdoor Lawn",
-      category: "Venue",
-      shopName: "Imperial Banquets & Warehousing",
-      vendorType: "Venue Provider",
-      location: "Lower Parel, Mumbai",
-      fulfillmentType: "In-Store Pickup",
-      pricePerDay: 25000,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: "mmr-02",
-      title: "Air-Conditioned Grand Celebration Hall",
-      category: "Venue",
-      shopName: "Majestic Grand Venue",
-      vendorType: "Event Space",
-      location: "Majiwada, Thane",
-      fulfillmentType: "In-Store Pickup",
-      pricePerDay: 35000,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1545232979-fbfd43e1d1eb?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: "mmr-03",
-      title: "Seaside Open-Air Pavilion",
-      category: "Venue",
-      shopName: "Palm Beach Resort & Events",
-      vendorType: "Hospitality Partner",
-      location: "Vashi, Navi Mumbai",
-      fulfillmentType: "In-Store Pickup",
-      pricePerDay: 40000,
-      availabilityStatus: "Booked",
-      image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80"
-    },
+  // Fallback Reference Coordinates: Bandra Kurla Complex (BKC) Central Logistics Depot
+  const MMR_DEPOT_COORDS = { lat: 19.0674, lng: 72.8687 };
 
-    // 2. COMMERCIAL KITCHENS & APPLIANCES
-    {
-      id: "mmr-04",
-      title: "Commercial Bulk Kitchen Setup & Cold Storage",
-      category: "Commercial Kitchen",
-      shopName: "Royal Kitchens & Depot",
-      vendorType: "Kitchen Facility",
-      location: "Ghatkopar West, Mumbai",
-      fulfillmentType: "In-Store Pickup",
-      pricePerDay: 12000,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: "mmr-05",
-      title: "Industrial Heavy-Duty Gas Ranges & Fryers",
-      category: "Commercial Kitchen",
-      shopName: "Metro Catering Hub",
-      vendorType: "Equipment Rental Depot",
-      location: "Kalyan West, Thane",
-      fulfillmentType: "Site Delivery",
-      pricePerDay: 3500,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1590725140246-20acdee442be?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: "mmr-06",
-      title: "Walk-In Blast Freezer Unit (Trailer Mounted)",
-      category: "Commercial Kitchen",
-      shopName: "ColdChain Express Depot",
-      vendorType: "Warehouse Provider",
-      location: "Bhiwandi Industrial Hub",
-      fulfillmentType: "Site Delivery",
-      pricePerDay: 7000,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80"
-    },
-
-    // 3. LOGISTICS & VEHICLES
-    {
-      id: "mmr-07",
-      title: "Refrigerated Catering Transport Van (3 Ton)",
-      category: "Logistics Vehicle",
-      shopName: "Apex Catering Logistics",
-      vendorType: "Fleet Owner",
-      location: "Anjur Phata, Bhiwandi",
-      fulfillmentType: "Site Delivery",
-      pricePerDay: 4500,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: "mmr-08",
-      title: "Heavy-Duty Food Transport Truck",
-      category: "Logistics Vehicle",
-      shopName: "TransMMR Hospitality Fleet",
-      vendorType: "Logistics Partner",
-      location: "Panvel, Navi Mumbai",
-      fulfillmentType: "Site Delivery",
-      pricePerDay: 6000,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"
-    },
-
-    // 4. EVENT EQUIPMENT & FURNITURE
-    {
-      id: "mmr-09",
-      title: "High-Capacity Line Array Sound & Lighting Rig",
-      category: "Event Equipment",
-      shopName: "Grand Event Supplies",
-      vendorType: "Event Warehouse",
-      location: "Andheri East, Mumbai",
-      fulfillmentType: "Site Delivery",
-      pricePerDay: 15000,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: "mmr-10",
-      title: "Luxury Dining Tables & Banquet Chairs (Set of 200)",
-      category: "Event Equipment",
-      shopName: "Elite Furniture Depot",
-      vendorType: "Rental Depot",
-      location: "Dadar West, Mumbai",
-      fulfillmentType: "Site Delivery",
-      pricePerDay: 8500,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: "mmr-11",
-      title: "Outdoor Waterproof German Canopy Tents (50x30ft)",
-      category: "Event Equipment",
-      shopName: "Suburban Tent & Decor House",
-      vendorType: "Event Decorator",
-      location: "Dombivli East, Thane",
-      fulfillmentType: "Site Delivery",
-      pricePerDay: 11000,
-      availabilityStatus: "Booked",
-      image: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      id: "mmr-12",
-      title: "Silent Diesel Generator Unit (125 kVA)",
-      category: "Event Equipment",
-      shopName: "PowerGrid Events Solutions",
-      vendorType: "Power Equipment Depot",
-      location: "Vasai East, Extended MMR",
-      fulfillmentType: "Site Delivery",
-      pricePerDay: 5000,
-      availabilityStatus: "Available",
-      image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80"
-    }
-  ];
-
-  // Verified Fallback Images to guarantee NO broken placeholders
+  // Verified High-Res Image Fallbacks (100% Reliable & Non-Broken)
   const VERIFIED_FALLBACK_IMAGES = {
     "Venue": "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80",
+    "Kitchen": "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80",
     "Commercial Kitchen": "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80",
+    "Vehicle": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
     "Logistics Vehicle": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+    "Equipment": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
     "Event Equipment": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80"
   };
 
+  /**
+   * Safe image URL resolver guaranteeing no 404 or broken images
+   */
   function getSafeImageUrl(imgUrl, category = "Venue") {
-    // If the image URL is the known missing Unsplash hash, return verified celebration hall
-    if (imgUrl && imgUrl.includes('photo-1545232979-fbfd43e1d1eb')) {
+    if (!imgUrl || typeof imgUrl !== 'string' || imgUrl.includes('photo-1545232979-fbfd43e1d1eb')) {
       return 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80';
     }
-    return imgUrl || VERIFIED_FALLBACK_IMAGES[category] || VERIFIED_FALLBACK_IMAGES["Venue"];
+    return imgUrl;
   }
 
-  const CATEGORIES = [
-    { id: "all", label: "All Categories", icon: "grid" },
-    { id: "Venue", label: "Venues & Banquets", icon: "champagne-glasses" },
-    { id: "Commercial Kitchen", label: "Commercial Kitchens", icon: "utensils" },
-    { id: "Logistics Vehicle", label: "Logistics & Vehicles", icon: "truck" },
-    { id: "Event Equipment", label: "Event Equipment", icon: "speaker" }
-  ];
+  /**
+   * Haversine formula to compute great-circle distance in kilometers between two GPS coordinates
+   */
+  function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return 8.5; // fallback average distance
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 10) / 10;
+  }
 
-  const MMR_REGIONS = [
-    "Mumbai",
-    "Thane",
-    "Navi Mumbai",
-    "Bhiwandi",
-    "Kalyan",
-    "Dombivli",
-    "Vasai"
-  ];
-
-  const DEMO_USERS = [
-    {
-      businessName: "Imperial Banquets & Hospitality Ltd",
-      email: "procurement@imperialbanquets.in",
-      businessType: "Hotel & Resort",
-      role: "Provider & Seeker",
-      location: "Lower Parel, Mumbai",
-      verified: true
-    },
-    {
-      businessName: "Metro Catering Logistics Network",
-      email: "fleet@metrocatering.in",
-      businessType: "Catering Enterprise",
-      role: "Provider",
-      location: "Kalyan West, Thane",
-      verified: true
-    },
-    {
-      businessName: "Grand Event Supplies & Audio",
-      email: "production@grandevents.in",
-      businessType: "Event Planner & Production",
-      role: "Seeker",
-      location: "Andheri East, Mumbai",
-      verified: true
+  /**
+   * Simulated 3PL distance fare (Porter / Borzo style):
+   * Base ₹350 + ₹25/km. If round-trip selected, applies 20% discount on total delivery fee.
+   */
+  function calculateLogisticsFare(distanceKm, isRoundTrip) {
+    const baseFare = 350;
+    const perKm = 25;
+    let oneWayFare = baseFare + Math.round(distanceKm * perKm);
+    if (isRoundTrip) {
+      // 2-way with 20% discount on total delivery fee
+      return Math.round(oneWayFare * 2 * 0.80);
     }
-  ];
-
-  const INITIAL_REQUESTS = [
-    {
-      id: "REQ-8091",
-      assetId: "mmr-01",
-      assetTitle: "500-Seater Banquet & Outdoor Lawn",
-      seekerBusiness: "Taj Lands End Banquets",
-      seekerContact: "events@tajhotels.com",
-      startDate: "2026-09-12",
-      endDate: "2026-09-15",
-      days: 3,
-      dailyRate: 25000,
-      totalAmount: 75000,
-      fulfillmentType: "In-Store Pickup",
-      deliveryLocation: "Lower Parel, Mumbai",
-      status: "Pending",
-      notes: "International Corporate Diamond Gala."
-    },
-    {
-      id: "REQ-8092",
-      assetId: "mmr-04",
-      assetTitle: "Commercial Bulk Kitchen Setup & Cold Storage",
-      seekerBusiness: "Apex Gourmet Catering",
-      seekerContact: "kitchen.ops@apexcatering.in",
-      startDate: "2026-09-18",
-      endDate: "2026-09-22",
-      days: 4,
-      dailyRate: 12000,
-      totalAmount: 48000,
-      fulfillmentType: "In-Store Pickup",
-      deliveryLocation: "Ghatkopar West, Mumbai",
-      status: "Approved",
-      notes: "Pre-event prep kitchen validation completed."
-    },
-    {
-      id: "REQ-8093",
-      assetId: "mmr-07",
-      assetTitle: "Refrigerated Catering Transport Van (3 Ton)",
-      seekerBusiness: "Gourmet Symphony Caterers",
-      seekerContact: "logistics@gourmetsymphony.com",
-      startDate: "2026-09-24",
-      endDate: "2026-09-26",
-      days: 2,
-      dailyRate: 4500,
-      totalAmount: 9000,
-      fulfillmentType: "Site Delivery",
-      deliveryLocation: "Jio World Convention Centre, BKC",
-      status: "Negotiating",
-      negotiationOffer: 8000,
-      notes: "Seeking ₹8,000 package rate for 2-day conference delivery."
-    },
-    {
-      id: "REQ-8094",
-      assetId: "mmr-09",
-      assetTitle: "High-Capacity Line Array Sound & Lighting Rig",
-      seekerBusiness: "Royal Zenith Events & Staging",
-      seekerContact: "production@zenithevents.com",
-      startDate: "2026-09-28",
-      endDate: "2026-09-30",
-      days: 2,
-      dailyRate: 15000,
-      totalAmount: 30000,
-      fulfillmentType: "Site Delivery",
-      deliveryLocation: "Andheri East Exhibition Grounds",
-      status: "Approved",
-      notes: "Sound tech dispatch confirmed with operator."
-    }
-  ];
+    return oneWayFare;
+  }
 
   class HospitaLinkApp {
     constructor() {
@@ -301,64 +79,94 @@
         currentUser: this.loadCurrentUser(),
         inventory: this.loadInventory(),
         requests: this.loadRequests(),
+        emergencyMode: false,
+        selectedRadius: 'all', // 'all', '5', '10', '15'
         activeCategory: 'all',
         searchQuery: '',
         selectedLocation: 'all',
         selectedPriceRange: 'all',
         selectedFulfillment: 'all',
         sortBy: 'featured',
+        bookingMode: 'planned', // 'planned' | 'emergency'
         activeModalAsset: null,
-        activeNegotiatingReq: null
+        activeNegotiatingReq: null,
+        activeAuditReq: null,
+        activeAuditStep: 1
       };
 
       this.dom = {};
       this.init();
     }
 
-    // --- Storage Helpers ---
+    // --- Storage & Data Hydration ---
     initStorage() {
-      // Initialize with MMR dataset if not stored or outdated
-      if (!localStorage.getItem('hospitalink_inventory_mmr_v2')) {
-        localStorage.setItem('hospitalink_inventory_mmr_v2', JSON.stringify(inventoryData));
-        localStorage.removeItem('hospitalink_inventory'); // Clear legacy mock
+      const defaultInventory = (typeof window !== 'undefined' && window.inventoryData) ? window.inventoryData : [];
+      const defaultRequests = (typeof window !== 'undefined' && window.INITIAL_REQUESTS) ? window.INITIAL_REQUESTS : [];
+
+      if (!localStorage.getItem('hospitalink_inventory_mmr_v3')) {
+        localStorage.setItem('hospitalink_inventory_mmr_v3', JSON.stringify(defaultInventory));
       }
-      if (!localStorage.getItem('hospitalink_requests_mmr_v2')) {
-        localStorage.setItem('hospitalink_requests_mmr_v2', JSON.stringify(INITIAL_REQUESTS));
+      if (!localStorage.getItem('hospitalink_requests_mmr_v3')) {
+        localStorage.setItem('hospitalink_requests_mmr_v3', JSON.stringify(defaultRequests));
       }
     }
 
     loadInventory() {
       try {
-        const stored = localStorage.getItem('hospitalink_inventory_mmr_v2');
-        return stored ? JSON.parse(stored) : inventoryData;
+        const stored = localStorage.getItem('hospitalink_inventory_mmr_v3');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+        return (typeof window !== 'undefined' && window.inventoryData) ? window.inventoryData : [];
       } catch {
-        return inventoryData;
+        return (typeof window !== 'undefined' && window.inventoryData) ? window.inventoryData : [];
       }
     }
 
     saveInventory() {
-      localStorage.setItem('hospitalink_inventory_mmr_v2', JSON.stringify(this.state.inventory));
+      localStorage.setItem('hospitalink_inventory_mmr_v3', JSON.stringify(this.state.inventory));
     }
 
     loadRequests() {
       try {
-        const stored = localStorage.getItem('hospitalink_requests_mmr_v2');
-        return stored ? JSON.parse(stored) : INITIAL_REQUESTS;
+        const stored = localStorage.getItem('hospitalink_requests_mmr_v3');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+        return (typeof window !== 'undefined' && window.INITIAL_REQUESTS) ? window.INITIAL_REQUESTS : [];
       } catch {
-        return INITIAL_REQUESTS;
+        return (typeof window !== 'undefined' && window.INITIAL_REQUESTS) ? window.INITIAL_REQUESTS : [];
       }
     }
 
     saveRequests() {
-      localStorage.setItem('hospitalink_requests_mmr_v2', JSON.stringify(this.state.requests));
+      localStorage.setItem('hospitalink_requests_mmr_v3', JSON.stringify(this.state.requests));
     }
 
     loadCurrentUser() {
       try {
         const stored = localStorage.getItem('hospitalink_current_user');
-        return stored ? JSON.parse(stored) : DEMO_USERS[0];
+        if (stored) return JSON.parse(stored);
+        const demoUsers = (typeof window !== 'undefined' && window.DEMO_USERS) ? window.DEMO_USERS : [];
+        return demoUsers[0] || {
+          businessName: "Imperial Banquets & Hospitality Ltd",
+          email: "procurement@imperialbanquets.in",
+          businessType: "Hotel & Resort",
+          role: "Provider & Seeker",
+          location: "Lower Parel, Mumbai",
+          verified: true
+        };
       } catch {
-        return DEMO_USERS[0];
+        return {
+          businessName: "Imperial Banquets & Hospitality Ltd",
+          email: "procurement@imperialbanquets.in",
+          businessType: "Hotel & Resort",
+          role: "Provider & Seeker",
+          location: "Lower Parel, Mumbai",
+          verified: true
+        };
       }
     }
 
@@ -382,6 +190,7 @@
       this.renderCategoryPills();
       this.renderMarketplaceListings();
       this.renderProviderDashboard();
+      this.updateMonetizationCalculator();
       this.refreshIcons();
     }
 
@@ -409,8 +218,10 @@
       this.dom.regBizType = document.getElementById('reg-biz-type');
       this.dom.regHub = document.getElementById('reg-hub');
 
-      // Marketplace Filters
+      // Marketplace Filters & Emergency Toggle
       this.dom.searchInput = document.getElementById('search-input');
+      this.dom.btnEmergencyToggle = document.getElementById('btn-emergency-toggle');
+      this.dom.filterRadius = document.getElementById('filter-radius');
       this.dom.filterLocation = document.getElementById('filter-location');
       this.dom.filterCategory = document.getElementById('filter-category');
       this.dom.filterPrice = document.getElementById('filter-price');
@@ -422,25 +233,50 @@
       this.dom.listingsGrid = document.getElementById('listings-grid');
       this.dom.metricListingsCount = document.getElementById('metric-listings-count');
 
-      // Rental Booking Modal
+      // Rental Booking Modal & Dual-Mode Controls
       this.dom.rentalModal = document.getElementById('rental-modal');
       this.dom.btnCloseRental = document.getElementById('btn-close-rental');
       this.dom.btnCancelRental = document.getElementById('btn-cancel-rental');
       this.dom.formRental = document.getElementById('form-rental');
       this.dom.rentalAssetId = document.getElementById('rental-asset-id');
+      this.dom.btnModePlanned = document.getElementById('btn-mode-planned');
+      this.dom.btnModeEmergency = document.getElementById('btn-mode-emergency');
       this.dom.rentalAssetSummary = document.getElementById('rental-asset-summary');
       this.dom.rentalStartDate = document.getElementById('rental-start-date');
       this.dom.rentalEndDate = document.getElementById('rental-end-date');
+      this.dom.simDistanceKm = document.getElementById('sim-distance-km');
+      this.dom.radioPickup = document.getElementById('radio-pickup');
+      this.dom.radioDelivery = document.getElementById('radio-delivery');
+      this.dom.deliveryOptionsBox = document.getElementById('delivery-options-box');
+      this.dom.simDeliveryRate = document.getElementById('sim-delivery-rate');
+      this.dom.chkRoundtrip = document.getElementById('chk-roundtrip');
+      this.dom.deliveryAddressGroup = document.getElementById('delivery-address-group');
       this.dom.rentalDeliveryAddress = document.getElementById('rental-delivery-address');
-      this.dom.rentalNotes = document.getElementById('rental-notes');
+
+      // Calculation Outputs in Booking Modal
       this.dom.calcDuration = document.getElementById('calc-duration');
-      this.dom.calcDailyRate = document.getElementById('calc-daily-rate');
       this.dom.calcSubtotal = document.getElementById('calc-subtotal');
-      this.dom.calcPlatformFee = document.getElementById('calc-platform-fee');
+      this.dom.calcLogisticsFee = document.getElementById('calc-logistics-fee');
+      this.dom.rowTokenAmount = document.getElementById('row-token-amount');
+      this.dom.calcTokenAmount = document.getElementById('calc-token-amount');
       this.dom.calcDeposit = document.getElementById('calc-deposit');
       this.dom.calcGrandTotal = document.getElementById('calc-grand-total');
+      this.dom.btnSubmitRental = document.getElementById('btn-submit-rental');
+      this.dom.btnSubmitRentalText = document.getElementById('btn-submit-rental-text');
 
-      // Provider Dashboard
+      // Provider Dashboard & Monetization Calculator
+      this.dom.sliderAssets = document.getElementById('slider-assets');
+      this.dom.sliderDays = document.getElementById('slider-days');
+      this.dom.sliderRate = document.getElementById('slider-rate');
+      this.dom.valSliderAssets = document.getElementById('val-slider-assets');
+      this.dom.valSliderDays = document.getElementById('val-slider-days');
+      this.dom.valSliderRate = document.getElementById('val-slider-rate');
+      this.dom.calcMonthlyRev = document.getElementById('calc-monthly-rev');
+      this.dom.calcAnnualRev = document.getElementById('calc-annual-rev');
+      this.dom.calcUtilization = document.getElementById('calc-utilization');
+      this.dom.calcPayback = document.getElementById('calc-payback');
+      this.dom.btnCalcListRate = document.getElementById('btn-calc-list-rate');
+
       this.dom.provStatRevenue = document.getElementById('prov-stat-revenue');
       this.dom.provStatPending = document.getElementById('prov-stat-pending');
       this.dom.provStatActive = document.getElementById('prov-stat-active');
@@ -449,12 +285,23 @@
       this.dom.requestsTableBody = document.getElementById('requests-table-body');
       this.dom.providerInventoryTableBody = document.getElementById('provider-inventory-table-body');
       this.dom.btnOpenListModal = document.getElementById('btn-open-list-modal');
+      this.dom.btnOpenAuditModal = document.getElementById('btn-open-audit-modal');
 
       // Add Asset Modal
       this.dom.listAssetModal = document.getElementById('list-asset-modal');
       this.dom.btnCloseList = document.getElementById('btn-close-list');
       this.dom.btnCancelList = document.getElementById('btn-cancel-list');
       this.dom.formListAsset = document.getElementById('form-list-asset');
+      this.dom.assetName = document.getElementById('asset-name');
+      this.dom.assetCategory = document.getElementById('asset-category');
+      this.dom.assetFulfillment = document.getElementById('asset-fulfillment');
+      this.dom.assetShop = document.getElementById('asset-shop');
+      this.dom.assetVendorType = document.getElementById('asset-vendor-type');
+      this.dom.assetLocation = document.getElementById('asset-location');
+      this.dom.assetRate = document.getElementById('asset-rate');
+      this.dom.assetStatus = document.getElementById('asset-status');
+      this.dom.assetInstantDispatch = document.getElementById('asset-instant-dispatch');
+      this.dom.assetImage = document.getElementById('asset-image');
 
       // Quick View Modal
       this.dom.quickviewModal = document.getElementById('quickview-modal');
@@ -464,7 +311,7 @@
       this.dom.qvContent = document.getElementById('qv-content');
       this.dom.qvBtnRequest = document.getElementById('qv-btn-request');
 
-      // Negotiate Modal
+      // Negotiate Counter-Offer Modal
       this.dom.negotiateModal = document.getElementById('negotiate-modal');
       this.dom.btnCloseNeg = document.getElementById('btn-close-neg');
       this.dom.btnCancelNeg = document.getElementById('btn-cancel-neg');
@@ -475,25 +322,52 @@
       this.dom.negCounterPrice = document.getElementById('neg-counter-price');
       this.dom.negCounterMessage = document.getElementById('neg-counter-message');
 
-      // Toast & Footer
+      // 2-Step Digital Condition Audit Modal
+      this.dom.auditModal = document.getElementById('audit-modal');
+      this.dom.btnCloseAudit = document.getElementById('btn-close-audit');
+      this.dom.btnCancelAudit = document.getElementById('btn-cancel-audit');
+      this.dom.btnSubmitAudit = document.getElementById('btn-submit-audit');
+      this.dom.txtSubmitAudit = document.getElementById('txt-submit-audit');
+      this.dom.auditStep1Pill = document.getElementById('audit-step-1-pill');
+      this.dom.auditStep2Pill = document.getElementById('audit-step-2-pill');
+      this.dom.auditTargetTitle = document.getElementById('audit-target-title');
+      this.dom.auditTargetReq = document.getElementById('audit-target-req');
+      this.dom.auditTargetStatus = document.getElementById('audit-target-status');
+      this.dom.auditViewStep1 = document.getElementById('audit-view-step1');
+      this.dom.auditViewStep2 = document.getElementById('audit-view-step2');
+      this.dom.auditImgPredispatch = document.getElementById('audit-img-predispatch');
+      this.dom.auditImgPostreturn = document.getElementById('audit-img-postreturn');
+      this.dom.auditEscrowAmount = document.getElementById('audit-escrow-amount');
+
+      // Toast & Footer Hubs
       this.dom.toastContainer = document.getElementById('toast-container');
       this.dom.footerHubs = document.getElementById('footer-hubs');
     }
 
     populateFooterHubs() {
+      const regions = ["Mumbai", "Thane", "Navi Mumbai", "Bhiwandi", "Kalyan", "Vasai"];
       if (this.dom.footerHubs) {
-        this.dom.footerHubs.innerHTML = MMR_REGIONS.map(
+        this.dom.footerHubs.innerHTML = regions.map(
           reg => `<span class="footer-hub-chip"><i data-lucide="map-pin" style="width:0.75rem;height:0.75rem;display:inline-block;vertical-align:middle;margin-right:2px;"></i>${reg}</span>`
         ).join('');
+      }
+
+      // Populate registration dropdowns
+      if (this.dom.regBizType) {
+        const types = ["Hotel & Resort", "Catering Enterprise", "Banquet Venue", "Event Planner & Production", "Cloud Kitchen Network", "Institutional Kitchen"];
+        this.dom.regBizType.innerHTML = types.map(t => `<option value="${t}">${t}</option>`).join('');
+      }
+      if (this.dom.regHub) {
+        this.dom.regHub.innerHTML = regions.map(r => `<option value="${r}">${r}</option>`).join('');
       }
     }
 
     // --- Event Binding ---
     bindEvents() {
-      // Theme toggle
+      // 1. Theme Toggle
       this.dom.themeToggleBtn?.addEventListener('click', () => this.toggleTheme());
 
-      // View Switching
+      // 2. View Switching
       this.dom.btnViewSeeker?.addEventListener('click', () => this.switchView('seeker'));
       this.dom.btnViewProvider?.addEventListener('click', () => this.switchView('provider'));
       this.dom.brandLink?.addEventListener('click', (e) => {
@@ -501,13 +375,12 @@
         this.switchView('seeker');
       });
 
-      // Auth Modal Handlers
+      // 3. Auth Modal
       this.dom.btnOpenAuth?.addEventListener('click', () => this.openModal(this.dom.authModal));
       this.dom.btnCloseAuth?.addEventListener('click', () => this.closeModal(this.dom.authModal));
       this.dom.tabAuthLogin?.addEventListener('click', () => this.toggleAuthTab('login'));
       this.dom.tabAuthRegister?.addEventListener('click', () => this.toggleAuthTab('register'));
 
-      // Quick Demo logins
       document.querySelectorAll('.demo-quick-btn[data-demo]').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const index = parseInt(e.target.dataset.demo, 10);
@@ -515,11 +388,17 @@
         });
       });
 
-      // Form Submissions
       this.dom.formLogin?.addEventListener('submit', (e) => this.handleLogin(e));
       this.dom.formRegister?.addEventListener('submit', (e) => this.handleRegister(e));
 
-      // Marketplace Filters
+      // 4. Marketplace Filter Toolbar & Emergency Mode Toggle
+      this.dom.btnEmergencyToggle?.addEventListener('click', () => this.toggleEmergencyMode());
+
+      this.dom.filterRadius?.addEventListener('change', (e) => {
+        this.state.selectedRadius = e.target.value;
+        this.renderMarketplaceListings();
+      });
+
       this.dom.searchInput?.addEventListener('input', (e) => {
         this.state.searchQuery = e.target.value.trim().toLowerCase();
         this.renderMarketplaceListings();
@@ -553,29 +432,47 @@
 
       this.dom.btnResetFilters?.addEventListener('click', () => this.resetFilters());
 
-      // Rental Booking Modal Events
-      this.dom.btnCloseRental?.addEventListener('click', () => this.closeModal(this.dom.rentalModal));
-      this.dom.btnCancelRental?.addEventListener('click', () => this.closeModal(this.dom.rentalModal));
+      // 5. Booking Modal Mode & Logistics Controls
+      this.dom.btnModePlanned?.addEventListener('click', () => this.setBookingMode('planned'));
+      this.dom.btnModeEmergency?.addEventListener('click', () => this.setBookingMode('emergency'));
+
+      this.dom.radioPickup?.addEventListener('change', () => this.handleLogisticsModeChange());
+      this.dom.radioDelivery?.addEventListener('change', () => this.handleLogisticsModeChange());
+      this.dom.chkRoundtrip?.addEventListener('change', () => this.recalculateRentalQuote());
+
       this.dom.rentalStartDate?.addEventListener('change', () => this.recalculateRentalQuote());
       this.dom.rentalEndDate?.addEventListener('change', () => this.recalculateRentalQuote());
+
+      this.dom.btnCloseRental?.addEventListener('click', () => this.closeModal(this.dom.rentalModal));
+      this.dom.btnCancelRental?.addEventListener('click', () => this.closeModal(this.dom.rentalModal));
       this.dom.formRental?.addEventListener('submit', (e) => this.handleRentalSubmit(e));
 
-      // List Asset Modal Events
+      // 6. Automated Monetization Calculator Interactive Sliders
+      const updateCalc = () => this.updateMonetizationCalculator();
+      this.dom.sliderAssets?.addEventListener('input', updateCalc);
+      this.dom.sliderDays?.addEventListener('input', updateCalc);
+      this.dom.sliderRate?.addEventListener('input', updateCalc);
+
+      this.dom.btnCalcListRate?.addEventListener('click', () => {
+        const rate = parseInt(this.dom.sliderRate?.value || '15000', 10);
+        if (this.dom.assetRate) this.dom.assetRate.value = rate;
+        this.openModal(this.dom.listAssetModal);
+      });
+
+      // 7. Add Asset Modal Events
       this.dom.btnOpenListModal?.addEventListener('click', () => this.openModal(this.dom.listAssetModal));
       this.dom.btnCloseList?.addEventListener('click', () => this.closeModal(this.dom.listAssetModal));
       this.dom.btnCancelList?.addEventListener('click', () => this.closeModal(this.dom.listAssetModal));
       this.dom.formListAsset?.addEventListener('submit', (e) => this.handleListAssetSubmit(e));
 
-      // Preset images
       document.querySelectorAll('.preset-img-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const url = e.target.getAttribute('data-url');
-          const assetImgInput = document.getElementById('asset-image');
-          if (assetImgInput) assetImgInput.value = url;
+          if (this.dom.assetImage && url) this.dom.assetImage.value = url;
         });
       });
 
-      // Quick View Modal Events
+      // 8. Quick View Modal Events
       this.dom.btnCloseQv?.addEventListener('click', () => this.closeModal(this.dom.quickviewModal));
       this.dom.btnDismissQv?.addEventListener('click', () => this.closeModal(this.dom.quickviewModal));
       this.dom.qvBtnRequest?.addEventListener('click', () => {
@@ -585,21 +482,28 @@
         }
       });
 
-      // Negotiate Modal Events
+      // 9. Negotiate Counter-Offer Modal Events
       this.dom.btnCloseNeg?.addEventListener('click', () => this.closeModal(this.dom.negotiateModal));
       this.dom.btnCancelNeg?.addEventListener('click', () => this.closeModal(this.dom.negotiateModal));
       this.dom.formNegotiate?.addEventListener('submit', (e) => this.handleNegotiateSubmit(e));
 
-      // Close modals on escape key or backdrop click
+      // 10. 2-Step Digital Condition Audit Modal Events
+      this.dom.btnOpenAuditModal?.addEventListener('click', () => this.openAuditModal(null));
+      this.dom.btnCloseAudit?.addEventListener('click', () => this.closeModal(this.dom.auditModal));
+      this.dom.btnCancelAudit?.addEventListener('click', () => this.closeModal(this.dom.auditModal));
+      this.dom.auditStep1Pill?.addEventListener('click', () => this.switchAuditStep(1));
+      this.dom.auditStep2Pill?.addEventListener('click', () => this.switchAuditStep(2));
+      this.dom.btnSubmitAudit?.addEventListener('click', () => this.handleAuditSubmit());
+
+      // 11. Modal Backdrop Click Dismissal
       document.querySelectorAll('.modal-backdrop').forEach(modal => {
         modal.addEventListener('click', (e) => {
-          if (e.target === modal) {
-            this.closeModal(modal);
-          }
+          if (e.target === modal) this.closeModal(modal);
         });
       });
 
-      window.addEventListener('keydown', (e) => {
+      // 12. Global Escape key listener
+      document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           document.querySelectorAll('.modal-backdrop.active').forEach(m => this.closeModal(m));
         }
@@ -607,393 +511,418 @@
     }
 
     // --- Theme Controller ---
+    toggleTheme() {
+      const nextTheme = this.state.theme === 'light' ? 'dark' : 'light';
+      this.applyTheme(nextTheme);
+    }
+
     applyTheme(theme) {
       this.state.theme = theme;
       this.dom.html.setAttribute('data-theme', theme);
       localStorage.setItem('hospitalink_theme', theme);
-      
+
       if (this.dom.themeIcon) {
         this.dom.themeIcon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
-        this.refreshIcons();
-      }
-    }
-
-    toggleTheme() {
-      const newTheme = this.state.theme === 'light' ? 'dark' : 'light';
-      this.applyTheme(newTheme);
-      this.showToast({
-        title: 'Theme Switched',
-        message: `Interface shifted to ${newTheme === 'dark' ? 'Deep Dark' : 'Refined Light'} mode.`,
-        type: 'info'
-      });
-    }
-
-    // --- View Mode Switching ---
-    switchView(viewName) {
-      this.state.currentView = viewName;
-      if (viewName === 'seeker') {
-        this.dom.btnViewSeeker?.classList.add('active');
-        this.dom.btnViewSeeker?.setAttribute('aria-selected', 'true');
-        this.dom.btnViewProvider?.classList.remove('active');
-        this.dom.btnViewProvider?.setAttribute('aria-selected', 'false');
-        this.dom.viewSeeker?.classList.add('active');
-        this.dom.viewProvider?.classList.remove('active');
-        this.renderMarketplaceListings();
-      } else {
-        this.dom.btnViewProvider?.classList.add('active');
-        this.dom.btnViewProvider?.setAttribute('aria-selected', 'true');
-        this.dom.btnViewSeeker?.classList.remove('active');
-        this.dom.btnViewSeeker?.setAttribute('aria-selected', 'false');
-        this.dom.viewProvider?.classList.add('active');
-        this.dom.viewSeeker?.classList.remove('active');
-        this.renderProviderDashboard();
       }
       this.refreshIcons();
     }
 
-    // --- Authentication Handlers ---
+    // --- View Mode Controller ---
+    switchView(viewName) {
+      this.state.currentView = viewName;
+      if (viewName === 'seeker') {
+        this.dom.viewSeeker?.classList.add('active');
+        this.dom.viewProvider?.classList.remove('active');
+        this.dom.btnViewSeeker?.classList.add('active');
+        this.dom.btnViewSeeker?.setAttribute('aria-selected', 'true');
+        this.dom.btnViewProvider?.classList.remove('active');
+        this.dom.btnViewProvider?.setAttribute('aria-selected', 'false');
+        this.renderMarketplaceListings();
+      } else {
+        this.dom.viewSeeker?.classList.remove('active');
+        this.dom.viewProvider?.classList.add('active');
+        this.dom.btnViewSeeker?.classList.remove('active');
+        this.dom.btnViewSeeker?.setAttribute('aria-selected', 'false');
+        this.dom.btnViewProvider?.classList.add('active');
+        this.dom.btnViewProvider?.setAttribute('aria-selected', 'true');
+        this.renderProviderDashboard();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.refreshIcons();
+    }
+
+    // --- Emergency Mode Toggle ---
+    toggleEmergencyMode() {
+      this.state.emergencyMode = !this.state.emergencyMode;
+      if (this.state.emergencyMode) {
+        this.dom.btnEmergencyToggle?.classList.add('active');
+        if (this.dom.filterRadius) this.dom.filterRadius.value = "10";
+        this.state.selectedRadius = "10";
+        this.showToast({
+          title: "⚡ Emergency Dispatch Activated",
+          message: "Filtered strictly to instant 30-60 min dispatch assets within 10 km radius.",
+          type: "warning"
+        });
+      } else {
+        this.dom.btnEmergencyToggle?.classList.remove('active');
+        if (this.dom.filterRadius) this.dom.filterRadius.value = "all";
+        this.state.selectedRadius = "all";
+        this.showToast({
+          title: "Marketplace Standard Mode",
+          message: "Displaying full catalog across all MMR regions.",
+          type: "info"
+        });
+      }
+      this.renderMarketplaceListings();
+    }
+
+    // --- Authentication Engine ---
+    renderAuthStatus() {
+      if (!this.dom.authActionsContainer) return;
+      const user = this.state.currentUser;
+      if (user) {
+        this.dom.authActionsContainer.innerHTML = `
+          <div class="user-badge-pill" id="user-profile-badge">
+            <span class="user-dot"></span>
+            <div style="display: flex; flex-direction: column; text-align: left; line-height: 1.1;">
+              <span class="user-biz-name">${this.truncate(user.businessName, 22)}</span>
+              <span style="font-size: 0.68rem; color: var(--text-muted);">${user.businessType} • ${user.location.split(',')[0]}</span>
+            </div>
+            <button class="logout-btn" id="btn-logout" title="Sign Out" aria-label="Sign out">
+              <i data-lucide="log-out" style="width: 0.85rem; height: 0.85rem;"></i>
+            </button>
+          </div>
+        `;
+        document.getElementById('btn-logout')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.handleLogout();
+        });
+      } else {
+        this.dom.authActionsContainer.innerHTML = `
+          <button class="auth-trigger-btn" id="btn-open-auth">
+            <i data-lucide="building" style="width: 1rem; height: 1rem;"></i>
+            <span>Enterprise Login</span>
+          </button>
+        `;
+        document.getElementById('btn-open-auth')?.addEventListener('click', () => this.openModal(this.dom.authModal));
+      }
+      this.refreshIcons();
+    }
+
     toggleAuthTab(tab) {
       if (tab === 'login') {
         this.dom.tabAuthLogin?.classList.add('active');
         this.dom.tabAuthRegister?.classList.remove('active');
         if (this.dom.formLogin) this.dom.formLogin.style.display = 'flex';
         if (this.dom.formRegister) this.dom.formRegister.style.display = 'none';
-        const title = document.getElementById('auth-modal-title');
-        if (title) title.textContent = 'Enterprise Portal Access';
       } else {
-        this.dom.tabAuthRegister?.classList.add('active');
         this.dom.tabAuthLogin?.classList.remove('active');
-        if (this.dom.formRegister) this.dom.formRegister.style.display = 'flex';
+        this.dom.tabAuthRegister?.classList.add('active');
         if (this.dom.formLogin) this.dom.formLogin.style.display = 'none';
-        const title = document.getElementById('auth-modal-title');
-        if (title) title.textContent = 'Register Hospitality Organization';
+        if (this.dom.formRegister) this.dom.formRegister.style.display = 'flex';
       }
-      this.refreshIcons();
     }
 
     loginDemoUser(index) {
-      const user = DEMO_USERS[index] || DEMO_USERS[0];
+      const demoUsers = (typeof window !== 'undefined' && window.DEMO_USERS) ? window.DEMO_USERS : [];
+      const user = demoUsers[index] || {
+        businessName: "Imperial Banquets & Hospitality Ltd",
+        email: "procurement@imperialbanquets.in",
+        businessType: "Hotel & Resort",
+        role: "Provider & Seeker",
+        location: "Lower Parel, Mumbai",
+        verified: true
+      };
       this.saveCurrentUser(user);
       this.closeModal(this.dom.authModal);
       this.showToast({
-        title: 'Authenticated Successfully',
-        message: `Welcome, ${user.businessName} (${user.businessType}).`,
-        type: 'success'
+        title: "Enterprise Session Verified",
+        message: `Welcome back, ${user.businessName}. Authorized for MMR trading grid.`,
+        type: "success"
       });
     }
 
     handleLogin(e) {
       e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const namePart = email.split('@')[0].replace(/[._]/g, ' ').toUpperCase();
-      const newUser = {
-        businessName: `${namePart} HOSPITALITY`,
+      const email = document.getElementById('login-email')?.value || "procurement@grandpalace.com";
+      const user = {
+        businessName: email.split('@')[0].replace('.', ' ').toUpperCase() + " ENTERPRISE",
         email: email,
-        businessType: 'Hotel & Resort',
-        role: 'Enterprise Partner',
-        location: 'Mumbai Central',
+        businessType: "Hotel & Resort",
+        role: "Provider & Seeker",
+        location: "Lower Parel, Mumbai",
         verified: true
       };
-      this.saveCurrentUser(newUser);
+      this.saveCurrentUser(user);
       this.closeModal(this.dom.authModal);
       this.showToast({
-        title: 'Enterprise Sign In Complete',
-        message: `Signed in as ${newUser.businessName}`,
-        type: 'success'
+        title: "Login Successful",
+        message: `Signed in as ${user.businessName}`,
+        type: "success"
       });
     }
 
     handleRegister(e) {
       e.preventDefault();
-      const bizName = document.getElementById('reg-biz-name').value;
-      const bizType = document.getElementById('reg-biz-type').value;
-      const hub = document.getElementById('reg-hub')?.value || 'Lower Parel, Mumbai';
-      const email = document.getElementById('reg-email').value;
-
-      const newUser = {
-        businessName: bizName,
-        email: email,
-        businessType: bizType,
-        role: 'Enterprise Partner',
-        location: hub,
+      const user = {
+        businessName: document.getElementById('reg-biz-name')?.value || "Metro Catering Ltd",
+        email: document.getElementById('reg-email')?.value || "admin@metrocatering.in",
+        businessType: document.getElementById('reg-biz-type')?.value || "Catering Enterprise",
+        role: "Provider & Seeker",
+        location: document.getElementById('reg-hub')?.value + ", MMR" || "Mumbai",
         verified: true
       };
-
-      this.saveCurrentUser(newUser);
+      this.saveCurrentUser(user);
       this.closeModal(this.dom.authModal);
       this.showToast({
-        title: 'Enterprise Account Created',
-        message: `Welcome ${bizName}! Your verified status is active.`,
-        type: 'success'
+        title: "Registration Approved",
+        message: `Organization ${user.businessName} verified on MMR Exchange.`,
+        type: "success"
       });
     }
 
-    renderAuthStatus() {
-      const container = this.dom.authActionsContainer;
-      if (!container) return;
-
-      if (this.state.currentUser) {
-        const user = this.state.currentUser;
-        const initials = user.businessName
-          .split(' ')
-          .slice(0, 2)
-          .map(w => w[0])
-          .join('');
-
-        container.innerHTML = `
-          <div class="user-profile-badge">
-            <div class="user-avatar" title="${user.businessName}">${initials}</div>
-            <div class="user-info">
-              <span class="user-name">${this.truncate(user.businessName, 22)}</span>
-              <span class="user-type">${user.businessType}</span>
-            </div>
-            <button class="btn-signout" id="btn-sign-out" title="Sign Out">
-              <i data-lucide="log-out" style="width: 0.95rem; height: 0.95rem;"></i>
-            </button>
-          </div>
-        `;
-
-        document.getElementById('btn-sign-out')?.addEventListener('click', () => {
-          this.saveCurrentUser(null);
-          this.showToast({
-            title: 'Signed Out',
-            message: 'You have logged out of the enterprise session.',
-            type: 'info'
-          });
-        });
-      } else {
-        container.innerHTML = `
-          <button class="auth-trigger-btn" id="btn-open-auth">
-            <i data-lucide="building" style="width: 1rem; height: 1rem;"></i>
-            <span>Enterprise Login</span>
-          </button>
-        `;
-        document.getElementById('btn-open-auth')?.addEventListener('click', () => {
-          this.openModal(this.dom.authModal);
-        });
-      }
-      this.refreshIcons();
+    handleLogout() {
+      this.saveCurrentUser(null);
+      this.showToast({
+        title: "Session Terminated",
+        message: "You have signed out from the enterprise portal.",
+        type: "info"
+      });
     }
 
-    // --- Category Pills Bar ---
+    // --- Category Pills Navigation ---
     renderCategoryPills() {
-      const container = this.dom.categoryPillsContainer;
-      if (!container) return;
+      if (!this.dom.categoryPillsContainer) return;
+      const categories = [
+        { id: "all", label: "All Categories", icon: "grid" },
+        { id: "Venue", label: "Venues & Banquets", icon: "champagne-glasses" },
+        { id: "Kitchen", label: "Commercial Kitchens", icon: "utensils" },
+        { id: "Vehicle", label: "Logistics & Vehicles", icon: "truck" },
+        { id: "Equipment", label: "Event Equipment", icon: "speaker" }
+      ];
 
-      const counts = {};
-      counts['all'] = this.state.inventory.length;
-      CATEGORIES.forEach(cat => {
-        if (cat.id !== 'all') {
-          counts[cat.id] = this.state.inventory.filter(item => item.category === cat.id).length;
-        }
-      });
+      this.dom.categoryPillsContainer.innerHTML = categories.map(cat => `
+        <button 
+          class="category-pill ${this.state.activeCategory === cat.id ? 'active' : ''}" 
+          data-cat="${cat.id}"
+        >
+          <i data-lucide="${cat.icon}" style="width: 0.9rem; height: 0.9rem;"></i>
+          <span>${cat.label}</span>
+        </button>
+      `).join('');
 
-      container.innerHTML = CATEGORIES.map(cat => {
-        const isActive = this.state.activeCategory === cat.id ? 'active' : '';
-        return `
-          <button class="category-pill ${isActive}" data-category="${cat.id}">
-            <span>${cat.label}</span>
-            <span class="category-count">${counts[cat.id] || 0}</span>
-          </button>
-        `;
-      }).join('');
-
-      container.querySelectorAll('.category-pill').forEach(btn => {
+      this.dom.categoryPillsContainer.querySelectorAll('.category-pill').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const cat = e.currentTarget.dataset.category;
-          this.state.activeCategory = cat;
-          if (this.dom.filterCategory) {
-            this.dom.filterCategory.value = cat;
-          }
+          const catId = e.currentTarget.getAttribute('data-cat');
+          this.state.activeCategory = catId;
+          if (this.dom.filterCategory) this.dom.filterCategory.value = catId;
           this.renderCategoryPills();
           this.renderMarketplaceListings();
         });
       });
+      this.refreshIcons();
     }
 
-    // --- Marketplace Listings & Filtering ---
-    filterListings() {
-      return this.state.inventory.filter(item => {
-        // 1. Category match
-        if (this.state.activeCategory !== 'all' && item.category !== this.state.activeCategory) {
-          return false;
-        }
-
-        // 2. MMR Location match
-        if (this.state.selectedLocation !== 'all') {
-          const locFilter = this.state.selectedLocation.toLowerCase();
-          const itemLoc = item.location.toLowerCase();
-          
-          if (locFilter === 'mumbai') {
-            // Must contain mumbai, but not navi mumbai
-            if (!itemLoc.includes('mumbai') || itemLoc.includes('navi mumbai')) {
-              return false;
-            }
-          } else {
-            if (!itemLoc.includes(locFilter)) {
-              return false;
-            }
-          }
-        }
-
-        // 3. Price Range match
-        if (this.state.selectedPriceRange !== 'all') {
-          const price = item.pricePerDay;
-          if (this.state.selectedPriceRange === 'under-5k' && price >= 5000) return false;
-          if (this.state.selectedPriceRange === '5k-15k' && (price < 5000 || price > 15000)) return false;
-          if (this.state.selectedPriceRange === '15k-30k' && (price < 15000 || price > 30000)) return false;
-          if (this.state.selectedPriceRange === 'above-30k' && price <= 30000) return false;
-        }
-
-        // 4. Fulfillment match
-        if (this.state.selectedFulfillment !== 'all') {
-          if (item.fulfillmentType !== this.state.selectedFulfillment) {
-            return false;
-          }
-        }
-
-        // 5. Search query match
-        if (this.state.searchQuery) {
-          const q = this.state.searchQuery;
-          const matchTitle = item.title.toLowerCase().includes(q);
-          const matchShop = item.shopName.toLowerCase().includes(q);
-          const matchVendor = item.vendorType.toLowerCase().includes(q);
-          const matchCat = item.category.toLowerCase().includes(q);
-          const matchLoc = item.location.toLowerCase().includes(q);
-          if (!matchTitle && !matchShop && !matchVendor && !matchCat && !matchLoc) {
-            return false;
-          }
-        }
-
-        return true;
-      }).sort((a, b) => {
-        if (this.state.sortBy === 'price-asc') return a.pricePerDay - b.pricePerDay;
-        if (this.state.sortBy === 'price-desc') return b.pricePerDay - a.pricePerDay;
-        return 0; // default featured
-      });
-    }
-
+    // --- Marketplace Listings & Proximity Filtering ---
     renderMarketplaceListings() {
-      const grid = this.dom.listingsGrid;
-      if (!grid) return;
+      if (!this.dom.listingsGrid) return;
 
-      const items = this.filterListings();
+      let items = [...this.state.inventory];
 
-      // Update Results Meta
+      // Calculate distance for each item relative to BKC Depot
+      items.forEach(item => {
+        const coords = item.coordinates || MMR_DEPOT_COORDS;
+        item._distanceKm = calculateDistanceKm(
+          MMR_DEPOT_COORDS.lat,
+          MMR_DEPOT_COORDS.lng,
+          coords.lat,
+          coords.lng
+        );
+      });
+
+      // 1. Emergency Mode Filter (Only assets with instantDispatchAvailable = true)
+      if (this.state.emergencyMode) {
+        items = items.filter(item => item.instantDispatchAvailable === true);
+      }
+
+      // 2. Proximity Radius Filter
+      if (this.state.selectedRadius !== 'all') {
+        const maxDist = parseFloat(this.state.selectedRadius);
+        items = items.filter(item => item._distanceKm <= maxDist);
+      }
+
+      // 3. Category Filter
+      if (this.state.activeCategory !== 'all') {
+        items = items.filter(item => {
+          const c = item.category.toLowerCase();
+          const target = this.state.activeCategory.toLowerCase();
+          if (target === 'venue') return c.includes('venue');
+          if (target === 'kitchen') return c.includes('kitchen');
+          if (target === 'vehicle') return c.includes('vehicle');
+          if (target === 'equipment') return c.includes('equipment');
+          return c === target;
+        });
+      }
+
+      // 4. Location Filter (MMR)
+      if (this.state.selectedLocation !== 'all') {
+        items = items.filter(item => item.location.toLowerCase().includes(this.state.selectedLocation.toLowerCase()));
+      }
+
+      // 5. Price Range Filter
+      if (this.state.selectedPriceRange !== 'all') {
+        if (this.state.selectedPriceRange === 'under-5k') {
+          items = items.filter(i => i.pricePerDay < 5000);
+        } else if (this.state.selectedPriceRange === '5k-15k') {
+          items = items.filter(i => i.pricePerDay >= 5000 && i.pricePerDay <= 15000);
+        } else if (this.state.selectedPriceRange === '15k-30k') {
+          items = items.filter(i => i.pricePerDay > 15000 && i.pricePerDay <= 30000);
+        } else if (this.state.selectedPriceRange === 'above-30k') {
+          items = items.filter(i => i.pricePerDay > 30000);
+        }
+      }
+
+      // 6. Fulfillment Filter
+      if (this.state.selectedFulfillment !== 'all') {
+        items = items.filter(item => item.fulfillmentType === this.state.selectedFulfillment);
+      }
+
+      // 7. Search Query
+      if (this.state.searchQuery) {
+        const q = this.state.searchQuery;
+        items = items.filter(item =>
+          item.title.toLowerCase().includes(q) ||
+          item.shopName.toLowerCase().includes(q) ||
+          item.vendorType.toLowerCase().includes(q) ||
+          item.location.toLowerCase().includes(q)
+        );
+      }
+
+      // 8. Sorting
+      if (this.state.sortBy === 'price-asc') {
+        items.sort((a, b) => a.pricePerDay - b.pricePerDay);
+      } else if (this.state.sortBy === 'price-desc') {
+        items.sort((a, b) => b.pricePerDay - a.pricePerDay);
+      }
+
+      // Update Results Counter
       if (this.dom.resultsCountText) {
-        this.dom.resultsCountText.innerHTML = `Showing <strong class="results-count">${items.length}</strong> of ${this.state.inventory.length} MMR commercial assets`;
+        const modeLabel = this.state.emergencyMode ? " ⚡ Emergency Dispatch" : "";
+        this.dom.resultsCountText.innerHTML = `Showing <strong class="results-count">${items.length}</strong>${modeLabel} commercial assets`;
       }
       if (this.dom.metricListingsCount) {
-        this.dom.metricListingsCount.textContent = `${this.state.inventory.length} Assets`;
+        this.dom.metricListingsCount.textContent = `${items.length} Assets Available`;
       }
 
+      // Empty State
       if (items.length === 0) {
-        grid.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">
-              <i data-lucide="package-x"></i>
-            </div>
-            <h3>No matching MMR commercial equipment found</h3>
-            <p>Try resetting filters or adjusting search keywords to find available hospitality infrastructure.</p>
-            <button class="reset-filters-btn" id="btn-empty-reset">Reset All Filters</button>
+        this.dom.listingsGrid.innerHTML = `
+          <div class="empty-state-wrap" style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔍</div>
+            <h3 style="font-size: 1.2rem; color: var(--text-primary); margin-bottom: 0.5rem;">No MMR Assets Match Your Search Criteria</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 480px; margin: 0 auto 1.25rem;">
+              ${this.state.emergencyMode ? 'No emergency units found within proximity radius. Try increasing radius to 15 km or turning off Emergency Mode.' : 'Try adjusting your region filter, daily price range, or category filter.'}
+            </p>
+            <button class="btn-primary-action" id="empty-reset-btn" style="margin: 0 auto;">Reset Filters</button>
           </div>
         `;
-        document.getElementById('btn-empty-reset')?.addEventListener('click', () => this.resetFilters());
-        this.refreshIcons();
+        document.getElementById('empty-reset-btn')?.addEventListener('click', () => this.resetFilters());
         return;
       }
 
-      grid.innerHTML = items.map(item => {
-        const safeImageUrl = getSafeImageUrl(item.image, item.category);
-        const isAvailable = item.availabilityStatus === 'Available';
-        const statusClass = isAvailable ? 'available' : 'booked';
-        const statusLabel = isAvailable ? 'Available Now' : 'Currently Booked';
-
-        const fulfillmentClass = item.fulfillmentType === 'Site Delivery' 
-          ? 'fulfillment-delivery' 
-          : 'fulfillment-pickup';
-
-        const fulfillmentIcon = item.fulfillmentType === 'Site Delivery'
-          ? 'truck'
-          : 'store';
+      // Render Cards
+      this.dom.listingsGrid.innerHTML = items.map(asset => {
+        const isAvailable = asset.availabilityStatus === 'Available';
+        const imgUrl = getSafeImageUrl(asset.image, asset.category);
+        const distanceText = `${asset._distanceKm || 6.5} km from BKC`;
+        const instantBadge = asset.instantDispatchAvailable
+          ? `<span class="instant-dispatch-badge"><i data-lucide="zap" style="width:0.75rem;height:0.75rem;"></i>⚡ 30–60 Min Dispatch</span>`
+          : '';
 
         return `
-          <article class="asset-card" data-id="${item.id}">
-            <div class="card-media">
+          <div class="listing-card ${!isAvailable ? 'card-booked' : ''}" data-id="${asset.id}">
+            <!-- Media Container -->
+            <div class="card-media-wrap">
               <img 
-                src="${safeImageUrl}" 
-                alt="${item.title}" 
-                loading="lazy" 
-                onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80';"
+                src="${imgUrl}" 
+                alt="${asset.title}" 
+                class="card-img" 
+                loading="lazy"
+                onerror="this.src='https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80'"
               >
-              <span class="card-category-badge">${item.category}</span>
-              <span class="card-status-pill ${statusClass}">${statusLabel}</span>
+              <div class="card-badges-top">
+                <span class="category-badge-chip">${asset.category}</span>
+                <span class="status-badge ${isAvailable ? 'approved' : 'pending'}">
+                  ${isAvailable ? 'Available' : 'Booked'}
+                </span>
+              </div>
+              <div class="card-badges-bottom">
+                ${instantBadge}
+                <span class="proximity-tag">
+                  <i data-lucide="map-pin" style="width:0.75rem;height:0.75rem;"></i>
+                  ${distanceText}
+                </span>
+              </div>
             </div>
 
+            <!-- Body Details -->
             <div class="card-body">
-              <div class="card-provider-row">
-                <span class="provider-info" title="${item.vendorType}">
-                  <i data-lucide="shield-check" class="verified-icon" style="width: 0.95rem; height: 0.95rem;"></i>
-                  <span>${item.vendorType}</span>
-                </span>
-                <span style="font-size: 0.75rem; font-weight: 600; color: var(--accent-emerald);">MMR Verified</span>
+              <h3 class="card-title" title="${asset.title}">${asset.title}</h3>
+              
+              <div class="vendor-subtext">
+                <span class="vendor-shop-name">${asset.shopName}</span>
+                <span class="vendor-type-tag">${asset.vendorType}</span>
               </div>
 
-              <h3 class="card-title" title="${item.title}">${item.title}</h3>
-
-              <div class="card-specs" title="${item.shopName}" style="display: flex; align-items: center; gap: 0.4rem;">
-                <i data-lucide="building-2" style="width: 0.85rem; height: 0.85rem; color: var(--text-muted); flex-shrink: 0;"></i>
-                <strong style="color: var(--text-primary); font-weight: 600;">${item.shopName}</strong>
-              </div>
-
-              <div class="card-location-row">
-                <span class="store-location-badge" title="${item.location}">
-                  <i data-lucide="map-pin" style="width: 0.88rem; height: 0.88rem;"></i>
-                  <span>${item.location}</span>
-                </span>
-                <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
-                  <span class="fulfillment-badge ${fulfillmentClass}">
-                    <i data-lucide="${fulfillmentIcon}" style="width: 0.75rem; height: 0.75rem;"></i>
-                    <span>${item.fulfillmentType}</span>
-                  </span>
-                  <span class="coordinates-tag">MMR Hub ID: ${item.id.toUpperCase()}</span>
+              <div class="card-specs-row">
+                <div class="spec-item" title="${asset.location}">
+                  <i data-lucide="navigation" class="spec-icon"></i>
+                  <span>${asset.location}</span>
+                </div>
+                <div class="spec-item">
+                  <i data-lucide="${asset.fulfillmentType === 'Site Delivery' ? 'truck' : 'store'}" class="spec-icon"></i>
+                  <span>${asset.fulfillmentType}</span>
                 </div>
               </div>
 
+              <!-- Pricing & Action Row -->
               <div class="card-footer">
-                <div class="price-box">
-                  <span class="price-amount">₹${item.pricePerDay.toLocaleString('en-IN')}</span>
-                  <span class="price-period">per calendar day</span>
+                <div class="card-price-wrap">
+                  <span class="price-val">₹${asset.pricePerDay.toLocaleString('en-IN')}</span>
+                  <span class="price-period">/ calendar day</span>
                 </div>
-                <div class="card-actions">
-                  <button class="btn-quickview" data-quickview="${item.id}" title="Quick Specs & Details">
-                    <i data-lucide="eye" style="width: 1rem; height: 1rem;"></i>
+
+                <div class="card-btn-group">
+                  <button class="btn-quickview" data-qv-id="${asset.id}" title="Asset Specifications">
+                    <i data-lucide="eye" style="width: 0.95rem; height: 0.95rem;"></i>
                   </button>
                   <button 
-                    class="btn-request-rent ${!isAvailable ? 'btn-booked-action' : ''}" 
-                    data-rent="${item.id}"
-                    style="${!isAvailable ? 'background-color: var(--accent-amber);' : ''}"
+                    class="btn-request ${this.state.emergencyMode ? 'btn-emergency-book' : ''}" 
+                    data-book-id="${asset.id}" 
+                    ${!isAvailable ? 'disabled' : ''}
                   >
-                    ${isAvailable ? 'Request Rent' : 'Pre-Book'}
+                    ${!isAvailable 
+                      ? 'Date Locked' 
+                      : (this.state.emergencyMode ? '⚡ Instant Dispatch' : 'Reserve Asset')}
                   </button>
                 </div>
               </div>
             </div>
-          </article>
+          </div>
         `;
       }).join('');
 
-      // Bind card actions
-      grid.querySelectorAll('[data-quickview]').forEach(btn => {
+      // Attach Card Button Handlers
+      this.dom.listingsGrid.querySelectorAll('[data-qv-id]').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const id = e.currentTarget.dataset.quickview;
+          const id = e.currentTarget.getAttribute('data-qv-id');
           this.openQuickViewModal(id);
         });
       });
 
-      grid.querySelectorAll('[data-rent]').forEach(btn => {
+      this.dom.listingsGrid.querySelectorAll('[data-book-id]').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const id = e.currentTarget.dataset.rent;
+          const id = e.currentTarget.getAttribute('data-book-id');
           this.openRentalModal(id);
         });
       });
@@ -1002,101 +931,199 @@
     }
 
     resetFilters() {
-      this.state.activeCategory = 'all';
       this.state.searchQuery = '';
+      this.state.activeCategory = 'all';
       this.state.selectedLocation = 'all';
       this.state.selectedPriceRange = 'all';
       this.state.selectedFulfillment = 'all';
+      this.state.selectedRadius = 'all';
       this.state.sortBy = 'featured';
+      this.state.emergencyMode = false;
 
       if (this.dom.searchInput) this.dom.searchInput.value = '';
       if (this.dom.filterLocation) this.dom.filterLocation.value = 'all';
       if (this.dom.filterCategory) this.dom.filterCategory.value = 'all';
       if (this.dom.filterPrice) this.dom.filterPrice.value = 'all';
       if (this.dom.filterFulfillment) this.dom.filterFulfillment.value = 'all';
+      if (this.dom.filterRadius) this.dom.filterRadius.value = 'all';
       if (this.dom.sortSelect) this.dom.sortSelect.value = 'featured';
+      this.dom.btnEmergencyToggle?.classList.remove('active');
 
       this.renderCategoryPills();
       this.renderMarketplaceListings();
-      this.showToast({
-        title: 'Filters Cleared',
-        message: 'Showing all 12 MMR regional commercial assets.',
-        type: 'info'
-      });
+      this.showToast({ title: "Filters Cleared", message: "Marketplace view reset to full MMR inventory.", type: "info" });
     }
 
-    // --- Rental Request Modal & Live Calculation ---
+    // --- Dual-Booking Modal Engine ---
     openRentalModal(assetId) {
-      const asset = this.state.inventory.find(item => item.id === assetId);
+      const asset = this.state.inventory.find(a => a.id === assetId);
       if (!asset) return;
 
       this.state.activeModalAsset = asset;
-      this.dom.rentalAssetId.value = asset.id;
+      if (this.dom.rentalAssetId) this.dom.rentalAssetId.value = asset.id;
 
-      // Default date range (tomorrow to +3 days)
+      // Set booking mode based on whether emergencyMode is active
+      this.setBookingMode(this.state.emergencyMode ? 'emergency' : 'planned');
+
+      // Date Pickers: Tomorrow to 3 days later
       const today = new Date();
-      const start = new Date(today);
-      start.setDate(today.getDate() + 1);
-      const end = new Date(today);
-      end.setDate(today.getDate() + 4);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const afterTomorrow = new Date(today);
+      afterTomorrow.setDate(afterTomorrow.getDate() + 3);
 
-      const formatISO = (d) => d.toISOString().split('T')[0];
-      this.dom.rentalStartDate.min = formatISO(today);
-      this.dom.rentalStartDate.value = formatISO(start);
-      this.dom.rentalEndDate.min = formatISO(start);
-      this.dom.rentalEndDate.value = formatISO(end);
+      const formatDate = (d) => d.toISOString().split('T')[0];
 
-      const safeImageUrl = getSafeImageUrl(asset.image, asset.category);
+      if (this.dom.rentalStartDate) {
+        this.dom.rentalStartDate.min = formatDate(today);
+        this.dom.rentalStartDate.value = this.state.emergencyMode ? formatDate(today) : formatDate(tomorrow);
+      }
+      if (this.dom.rentalEndDate) {
+        this.dom.rentalEndDate.min = formatDate(today);
+        this.dom.rentalEndDate.value = this.state.emergencyMode ? formatDate(tomorrow) : formatDate(afterTomorrow);
+      }
 
-      // Populate asset preview
-      this.dom.rentalAssetSummary.innerHTML = `
-        <img 
-          src="${safeImageUrl}" 
-          style="width: 70px; height: 70px; border-radius: 8px; object-fit: cover;" 
-          alt="${asset.title}"
-          onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80';"
-        >
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 0.2rem;">
-          <strong style="font-size: 0.92rem; color: var(--text-primary);">${asset.title}</strong>
-          <span style="font-size: 0.78rem; color: var(--text-secondary);">
-            ${asset.shopName} • <strong>${asset.location}</strong>
-          </span>
-          <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 600;">
-            ₹${asset.pricePerDay.toLocaleString('en-IN')} / day • ${asset.fulfillmentType}
-          </span>
-        </div>
-      `;
+      // Populate Asset Summary Header
+      const coords = asset.coordinates || MMR_DEPOT_COORDS;
+      const distance = calculateDistanceKm(MMR_DEPOT_COORDS.lat, MMR_DEPOT_COORDS.lng, coords.lat, coords.lng);
+      asset._distanceKm = distance;
+
+      if (this.dom.simDistanceKm) {
+        this.dom.simDistanceKm.textContent = `📍 ${distance} km from BKC Origin`;
+      }
+
+      if (this.dom.rentalAssetSummary) {
+        this.dom.rentalAssetSummary.innerHTML = `
+          <img 
+            src="${getSafeImageUrl(asset.image, asset.category)}" 
+            alt="${asset.title}" 
+            style="width: 72px; height: 54px; object-fit: cover; border-radius: var(--radius-sm); flex-shrink: 0;"
+          >
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${asset.title}
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">
+              ${asset.shopName} • <span style="color: var(--accent-primary); font-weight: 600;">₹${asset.pricePerDay.toLocaleString('en-IN')}/day</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--accent-emerald); font-weight: 600; margin-top: 2px;">
+              📍 ${asset.location} (${distance} km away)
+            </div>
+          </div>
+        `;
+      }
+
+      // Configure Delivery options based on fulfillmentType
+      if (asset.fulfillmentType === 'In-Store Pickup') {
+        if (this.dom.radioPickup) this.dom.radioPickup.checked = true;
+      } else {
+        if (this.dom.radioDelivery) this.dom.radioDelivery.checked = true;
+      }
+      this.handleLogisticsModeChange();
 
       this.recalculateRentalQuote();
       this.openModal(this.dom.rentalModal);
+    }
+
+    setBookingMode(mode) {
+      this.state.bookingMode = mode;
+      if (mode === 'emergency') {
+        this.dom.btnModePlanned?.classList.remove('active');
+        this.dom.btnModeEmergency?.classList.add('active');
+        if (this.dom.rowTokenAmount) {
+          this.dom.rowTokenAmount.innerHTML = `
+            <span>⚡ Emergency Fast-Track Payment:</span>
+            <strong id="calc-token-amount" style="color: #ea580c;">100% Contract Value</strong>
+          `;
+        }
+        if (this.dom.btnSubmitRentalText) {
+          this.dom.btnSubmitRentalText.textContent = "⚡ Confirm Instant Dispatch (30-60 Min)";
+        }
+      } else {
+        this.dom.btnModePlanned?.classList.add('active');
+        this.dom.btnModeEmergency?.classList.remove('active');
+        if (this.dom.rowTokenAmount) {
+          this.dom.rowTokenAmount.innerHTML = `
+            <span>20% Token Amount to Lock Date:</span>
+            <strong id="calc-token-amount" style="color: var(--accent-primary);">₹0</strong>
+          `;
+        }
+        if (this.dom.btnSubmitRentalText) {
+          this.dom.btnSubmitRentalText.textContent = "Lock Date with 20% Token";
+        }
+      }
+      this.recalculateRentalQuote();
+    }
+
+    handleLogisticsModeChange() {
+      const isDelivery = this.dom.radioDelivery?.checked;
+      if (this.dom.deliveryOptionsBox) {
+        this.dom.deliveryOptionsBox.style.display = isDelivery ? 'flex' : 'none';
+      }
+      if (this.dom.deliveryAddressGroup) {
+        this.dom.deliveryAddressGroup.style.display = isDelivery ? 'block' : 'none';
+      }
+      this.recalculateRentalQuote();
     }
 
     recalculateRentalQuote() {
       const asset = this.state.activeModalAsset;
       if (!asset) return;
 
-      const startVal = this.dom.rentalStartDate.value;
-      const endVal = this.dom.rentalEndDate.value;
+      const startDateStr = this.dom.rentalStartDate?.value;
+      const endDateStr = this.dom.rentalEndDate?.value;
 
       let days = 1;
-      if (startVal && endVal) {
-        const s = new Date(startVal);
-        const e = new Date(endVal);
-        const diffMs = e - s;
+      if (startDateStr && endDateStr) {
+        const start = new Date(startDateStr);
+        const end = new Date(endDateStr);
+        const diffMs = end - start;
         days = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
       }
 
-      const baseRental = days * asset.pricePerDay;
-      const platformFee = Math.round(baseRental * 0.05); // 5% Logistics & Insurance Fee
-      const deposit = Math.round(asset.pricePerDay * 0.5); // 50% Daily Deposit
-      const grandTotal = baseRental + platformFee + deposit;
+      const dailyRate = asset.pricePerDay || 10000;
+      const subtotal = days * dailyRate;
 
-      this.dom.calcDuration.textContent = `${days} Calendar Day${days > 1 ? 's' : ''}`;
-      this.dom.calcDailyRate.textContent = `₹${asset.pricePerDay.toLocaleString('en-IN')} / day`;
-      this.dom.calcSubtotal.textContent = `₹${baseRental.toLocaleString('en-IN')}`;
-      this.dom.calcPlatformFee.textContent = `₹${platformFee.toLocaleString('en-IN')}`;
-      this.dom.calcDeposit.textContent = `₹${deposit.toLocaleString('en-IN')} (Refundable)`;
-      this.dom.calcGrandTotal.textContent = `₹${grandTotal.toLocaleString('en-IN')}`;
+      // 3PL Logistics Fare Calculation
+      const isDelivery = this.dom.radioDelivery?.checked;
+      const isRoundTrip = this.dom.chkRoundtrip?.checked;
+      const distance = asset._distanceKm || 6.5;
+
+      let logisticsFee = 0;
+      if (isDelivery) {
+        logisticsFee = calculateLogisticsFare(distance, isRoundTrip);
+      }
+
+      // Security Deposit Escrow: 50% of 1-day rate
+      const escrowDeposit = Math.round(dailyRate * 0.5);
+
+      // 20% Token Amount calculation for planned date-locking
+      const tokenAmount = Math.round(subtotal * 0.20);
+      const grandTotal = subtotal + logisticsFee + escrowDeposit;
+
+      // Update DOM
+      if (this.dom.calcDuration) this.dom.calcDuration.textContent = `${days} Day${days > 1 ? 's' : ''}`;
+      if (this.dom.calcSubtotal) this.dom.calcSubtotal.textContent = `₹${subtotal.toLocaleString('en-IN')}`;
+      if (this.dom.simDeliveryRate) this.dom.simDeliveryRate.textContent = `₹${logisticsFee.toLocaleString('en-IN')}`;
+      if (this.dom.calcLogisticsFee) {
+        this.dom.calcLogisticsFee.textContent = isDelivery
+          ? `₹${logisticsFee.toLocaleString('en-IN')} (${isRoundTrip ? 'Round-Trip -20%' : 'One-Way'})`
+          : '₹0 (In-Store Pickup)';
+      }
+      if (this.dom.calcDeposit) this.dom.calcDeposit.textContent = `₹${escrowDeposit.toLocaleString('en-IN')} (Refundable)`;
+      if (this.dom.calcGrandTotal) this.dom.calcGrandTotal.textContent = `₹${grandTotal.toLocaleString('en-IN')}`;
+
+      if (this.state.bookingMode === 'planned') {
+        const tokenDisplay = document.getElementById('calc-token-amount');
+        if (tokenDisplay) tokenDisplay.textContent = `₹${tokenAmount.toLocaleString('en-IN')}`;
+        if (this.dom.btnSubmitRentalText) {
+          this.dom.btnSubmitRentalText.textContent = `Lock Date with 20% Token (₹${tokenAmount.toLocaleString('en-IN')})`;
+        }
+      } else {
+        if (this.dom.btnSubmitRentalText) {
+          this.dom.btnSubmitRentalText.textContent = `⚡ Confirm Instant Dispatch (₹${grandTotal.toLocaleString('en-IN')})`;
+        }
+      }
     }
 
     handleRentalSubmit(e) {
@@ -1104,210 +1131,365 @@
       const asset = this.state.activeModalAsset;
       if (!asset) return;
 
-      const startDate = this.dom.rentalStartDate.value;
-      const endDate = this.dom.rentalEndDate.value;
-      const deliveryLocation = this.dom.rentalDeliveryAddress.value;
-      const notes = this.dom.rentalNotes.value;
+      // Double-booking check
+      if (asset.availabilityStatus === 'Booked') {
+        this.showToast({
+          title: "Asset Double-Booking Blocked",
+          message: "This asset is already booked for these dates in the calendar.",
+          type: "warning"
+        });
+        return;
+      }
 
-      const s = new Date(startDate);
-      const eDate = new Date(endDate);
-      const days = Math.max(1, Math.round((eDate - s) / (1000 * 60 * 60 * 24)));
-      const totalAmount = days * asset.pricePerDay;
+      const startDate = this.dom.rentalStartDate?.value;
+      const endDate = this.dom.rentalEndDate?.value;
+      const isDelivery = this.dom.radioDelivery?.checked;
+      const isRoundTrip = this.dom.chkRoundtrip?.checked;
+      const deliveryAddress = isDelivery ? (this.dom.rentalDeliveryAddress?.value || "BKC Central Venue") : "In-Store Pickup";
 
-      const currentUser = this.state.currentUser || DEMO_USERS[0];
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+      const subtotal = days * asset.pricePerDay;
+      const logisticsFee = isDelivery ? calculateLogisticsFare(asset._distanceKm || 6.5, isRoundTrip) : 0;
+      const escrowDeposit = Math.round(asset.pricePerDay * 0.5);
+      const tokenAmount = Math.round(subtotal * 0.20);
+      const grandTotal = subtotal + logisticsFee + escrowDeposit;
+
+      const newRequestId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const newRequest = {
-        id: `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
+        id: newRequestId,
         assetId: asset.id,
         assetTitle: asset.title,
-        seekerBusiness: currentUser.businessName,
-        seekerContact: currentUser.email,
+        seekerBusiness: this.state.currentUser?.businessName || "Taj Lands End Banquets",
+        seekerContact: this.state.currentUser?.email || "events@tajhotels.com",
         startDate: startDate,
         endDate: endDate,
         days: days,
         dailyRate: asset.pricePerDay,
-        totalAmount: totalAmount,
-        fulfillmentType: asset.fulfillmentType,
-        deliveryLocation: deliveryLocation,
-        status: 'Pending',
-        notes: notes || `Direct reservation booked for ${asset.shopName} in ${asset.location}.`
+        totalAmount: grandTotal,
+        tokenAmount: tokenAmount,
+        escrowDeposit: escrowDeposit,
+        bookingMode: this.state.bookingMode === 'emergency' ? 'Emergency Dispatch' : 'Planned Advance',
+        deliveryMode: isDelivery ? (isRoundTrip ? 'Site Delivery (Round-Trip -20%)' : 'Site Delivery') : 'In-Store Pickup',
+        deliveryFee: logisticsFee,
+        deliveryLocation: deliveryAddress,
+        status: "Approved",
+        notes: this.state.bookingMode === 'emergency'
+          ? "⚡ Emergency 30-60 min dispatch contract activated."
+          : `20% Token Amount (₹${tokenAmount.toLocaleString('en-IN')}) verified via platform escrow. Calendar frozen.`,
+        auditStatus: "Pending Dispatch"
       };
 
-      // Prepend to requests
+      // 1. SMART CALENDAR LOCK: Freeze asset immediately
+      asset.availabilityStatus = "Booked";
+      this.saveInventory();
+
+      // 2. Append request to state and localStorage
       this.state.requests.unshift(newRequest);
       this.saveRequests();
 
       this.closeModal(this.dom.rentalModal);
 
-      this.showToast({
-        title: 'Booking Request Transmitted!',
-        message: `Reservation ${newRequest.id} dispatched to ${asset.shopName}.`,
-        type: 'success'
-      });
+      // Toast feedback
+      if (this.state.bookingMode === 'emergency') {
+        this.showToast({
+          title: "⚡ Emergency Dispatch Confirmed!",
+          message: `Booking ${newRequestId} dispatched! 3PL driver en route. Calendar locked for ${asset.title}.`,
+          type: "success"
+        });
+      } else {
+        this.showToast({
+          title: "Date Locked with 20% Token!",
+          message: `Received ₹${tokenAmount.toLocaleString('en-IN')} token. Calendar frozen to prevent double-booking.`,
+          type: "success"
+        });
+      }
 
-      // Refresh Provider Dashboard
+      this.renderMarketplaceListings();
       this.renderProviderDashboard();
     }
 
-    // --- Provider Dashboard View ---
+    // --- Provider Dashboard & KPI Rendering ---
     renderProviderDashboard() {
-      const requests = this.state.requests;
+      // Calculate KPIs
+      let totalRevenue = 0;
+      let pendingCount = 0;
+      let activeCount = 0;
 
-      // Recalculate KPIs
-      const approved = requests.filter(r => r.status === 'Approved');
-      const pending = requests.filter(r => r.status === 'Pending' || r.status === 'Negotiating');
-      const totalRevenue = approved.reduce((sum, r) => sum + r.totalAmount, 162000);
-
-      // Total daily fleet value
-      const fleetDailyValue = this.state.inventory.reduce((sum, item) => sum + item.pricePerDay, 0);
+      this.state.requests.forEach(r => {
+        if (r.status === 'Approved') {
+          totalRevenue += (r.totalAmount || 0);
+          activeCount++;
+        } else if (r.status === 'Pending' || r.status === 'Negotiating') {
+          pendingCount++;
+        }
+      });
 
       if (this.dom.provStatRevenue) {
-        this.dom.provStatRevenue.textContent = `₹${totalRevenue.toLocaleString('en-IN')}`;
+        this.dom.provStatRevenue.textContent = `₹${(totalRevenue + 284500).toLocaleString('en-IN')}`;
       }
       if (this.dom.provStatPending) {
-        this.dom.provStatPending.textContent = `${pending.length} Request${pending.length !== 1 ? 's' : ''}`;
+        this.dom.provStatPending.textContent = `${pendingCount} Requests`;
       }
       if (this.dom.provStatActive) {
-        this.dom.provStatActive.textContent = `${approved.length + 3} Units`;
+        this.dom.provStatActive.textContent = `${activeCount} Units Active`;
       }
+
+      const totalAssets = this.state.inventory.length;
+      const bookedAssets = this.state.inventory.filter(a => a.availabilityStatus === 'Booked').length;
+      const utilRate = totalAssets > 0 ? ((bookedAssets / totalAssets) * 100).toFixed(1) : '75.0';
       if (this.dom.provStatUtil) {
-        this.dom.provStatUtil.textContent = `₹${fleetDailyValue.toLocaleString('en-IN')}/day`;
+        this.dom.provStatUtil.textContent = `${utilRate}%`;
       }
+
+      // Render Incoming Requests Table
+      this.renderRequestsTable();
+
+      // Render Provider Registered Inventory Fleet
+      this.renderProviderFleetTable();
+    }
+
+    renderRequestsTable() {
+      if (!this.dom.requestsTableBody) return;
+
+      const requests = this.state.requests;
       if (this.dom.requestsCounterBadge) {
         this.dom.requestsCounterBadge.textContent = `${requests.length} Total Requests`;
       }
 
-      // Render Requests Table
-      const tbody = this.dom.requestsTableBody;
-      if (tbody) {
-        if (requests.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">No rental requests currently recorded.</td></tr>`;
-        } else {
-          tbody.innerHTML = requests.map(req => {
-            const statusClass = req.status.toLowerCase();
-            return `
-              <tr>
-                <td><span class="req-id-pill">${req.id}</span></td>
-                <td>
-                  <div style="max-width: 220px; font-weight: 600; color: var(--text-primary);" title="${req.assetTitle}">
-                    ${this.truncate(req.assetTitle, 32)}
-                  </div>
-                </td>
-                <td>
-                  <div class="business-cell">
-                    <span class="business-name">${req.seekerBusiness}</span>
-                    <span class="business-contact">${req.seekerContact}</span>
-                  </div>
-                </td>
-                <td>
-                  <div style="font-size: 0.8rem; font-weight: 600;">${req.days} Day${req.days > 1 ? 's' : ''}</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">${req.startDate} → ${req.endDate}</div>
-                </td>
-                <td>
-                  <strong style="color: var(--text-primary);">₹${req.totalAmount.toLocaleString('en-IN')}</strong>
-                  ${req.negotiationOffer ? `<div style="font-size: 0.72rem; color: var(--accent-purple); font-weight: 600;">Counter: ₹${req.negotiationOffer.toLocaleString('en-IN')}</div>` : ''}
-                </td>
-                <td>
-                  <span style="font-size: 0.75rem; font-weight: 500;">${req.fulfillmentType}</span>
-                </td>
-                <td>
-                  <span class="status-badge ${statusClass}">${req.status}</span>
-                </td>
-                <td style="text-align: right;">
-                  <div class="table-actions-group" style="justify-content: flex-end;">
-                    ${req.status !== 'Approved' ? `
-                      <button class="btn-table-action btn-accept" data-action="accept" data-id="${req.id}" title="Accept Booking">Accept</button>
-                    ` : ''}
-                    ${req.status !== 'Approved' && req.status !== 'Rejected' ? `
-                      <button class="btn-table-action btn-negotiate" data-action="negotiate" data-id="${req.id}" title="Send Counter-Offer">Negotiate</button>
-                      <button class="btn-table-action btn-reject" data-action="reject" data-id="${req.id}" title="Decline Request">Reject</button>
-                    ` : ''}
-                    ${req.status === 'Approved' ? `
-                      <span style="font-size: 0.75rem; color: var(--accent-emerald); font-weight: 700;">✓ Confirmed</span>
-                    ` : ''}
-                  </div>
-                </td>
-              </tr>
-            `;
-          }).join('');
-
-          // Bind table action clicks
-          tbody.querySelectorAll('[data-action]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-              const action = e.currentTarget.dataset.action;
-              const reqId = e.currentTarget.dataset.id;
-              this.handleTableAction(action, reqId);
-            });
-          });
-        }
-      }
-
-      // Render Provider Registered Inventory Fleet
-      const invTbody = this.dom.providerInventoryTableBody;
-      if (invTbody) {
-        invTbody.innerHTML = this.state.inventory.map(item => `
+      if (requests.length === 0) {
+        this.dom.requestsTableBody.innerHTML = `
           <tr>
-            <td><span class="req-id-pill">${item.id.toUpperCase()}</span></td>
-            <td><strong>${item.title}</strong></td>
-            <td><span class="brand-badge">${item.category}</span></td>
-            <td><strong>${item.shopName}</strong></td>
-            <td><span style="font-size: 0.75rem; color: var(--text-secondary);">${item.vendorType}</span></td>
-            <td><span class="store-location-badge"><i data-lucide="map-pin" style="width:0.75rem;height:0.75rem;"></i>${item.location}</span></td>
-            <td><span class="fulfillment-badge ${item.fulfillmentType === 'Site Delivery' ? 'fulfillment-delivery' : 'fulfillment-pickup'}">${item.fulfillmentType}</span></td>
-            <td><strong>₹${item.pricePerDay.toLocaleString('en-IN')}</strong> / day</td>
-            <td><span class="status-badge ${item.availabilityStatus === 'Available' ? 'approved' : 'pending'}">${item.availabilityStatus}</span></td>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              No rental requests currently in the pipeline.
+            </td>
           </tr>
-        `).join('');
+        `;
+        return;
       }
+
+      this.dom.requestsTableBody.innerHTML = requests.map(req => {
+        let statusClass = 'pending';
+        if (req.status === 'Approved') statusClass = 'approved';
+        if (req.status === 'Rejected') statusClass = 'rejected';
+        if (req.status === 'Negotiating') statusClass = 'negotiating';
+
+        const modePill = req.bookingMode === 'Emergency Dispatch'
+          ? `<span class="instant-dispatch-badge" style="display:inline-flex; padding: 2px 6px; font-size: 0.7rem;">⚡ Emergency</span>`
+          : `<span class="coordinates-tag" style="padding: 2px 6px; font-size: 0.7rem;">📅 Planned</span>`;
+
+        return `
+          <tr data-req-id="${req.id}">
+            <td>
+              <strong style="color: var(--accent-primary);">${req.id}</strong>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">${req.auditStatus || 'Pending Dispatch'}</div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-primary);">${this.truncate(req.assetTitle, 28)}</div>
+              <span class="coordinates-tag">${req.assetId.toUpperCase()}</span>
+            </td>
+            <td>
+              <div style="font-weight: 600;">${req.seekerBusiness}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${req.seekerContact}</div>
+            </td>
+            <td>
+              ${modePill}
+              <div style="font-size: 0.75rem; margin-top: 2px; color: var(--text-primary);">
+                ${req.startDate} → ${req.endDate} (${req.days}d)
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: var(--text-primary);">₹${req.totalAmount.toLocaleString('en-IN')}</div>
+              <div style="font-size: 0.72rem; color: var(--accent-emerald);">Token: ₹${(req.tokenAmount || 0).toLocaleString('en-IN')}</div>
+            </td>
+            <td>
+              <div style="font-size: 0.78rem;">Escrow: <strong>₹${(req.escrowDeposit || 0).toLocaleString('en-IN')}</strong></div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${req.deliveryMode || 'Site Delivery'}</div>
+            </td>
+            <td>
+              <span class="status-badge ${statusClass}">${req.status}</span>
+              ${req.negotiationOffer ? `<div style="font-size: 0.7rem; color: var(--accent-purple); margin-top: 2px;">Offer: ₹${req.negotiationOffer.toLocaleString('en-IN')}</div>` : ''}
+            </td>
+            <td style="text-align: right;">
+              <div style="display: flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap;">
+                ${req.status === 'Pending' || req.status === 'Negotiating' ? `
+                  <button class="action-table-btn btn-accept-req" data-id="${req.id}" title="Accept & Freeze Calendar">
+                    <i data-lucide="check" style="width: 0.85rem; height: 0.85rem;"></i> Accept
+                  </button>
+                  <button class="action-table-btn btn-negotiate-req" data-id="${req.id}" title="Send Counter-Offer">
+                    <i data-lucide="message-square" style="width: 0.85rem; height: 0.85rem;"></i> Counter
+                  </button>
+                  <button class="action-table-btn btn-reject-req" data-id="${req.id}" title="Reject Request">
+                    <i data-lucide="x" style="width: 0.85rem; height: 0.85rem;"></i>
+                  </button>
+                ` : `
+                  <button class="action-table-btn btn-audit-req" data-id="${req.id}" title="2-Step Photo Audit & Escrow">
+                    <i data-lucide="clipboard-check" style="width: 0.85rem; height: 0.85rem; color: var(--accent-emerald);"></i> Audit
+                  </button>
+                `}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Attach Request Table Action Handlers
+      this.dom.requestsTableBody.querySelectorAll('.btn-accept-req').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          this.handleAcceptRequest(id);
+        });
+      });
+
+      this.dom.requestsTableBody.querySelectorAll('.btn-reject-req').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          this.handleRejectRequest(id);
+        });
+      });
+
+      this.dom.requestsTableBody.querySelectorAll('.btn-negotiate-req').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          this.openNegotiateModal(id);
+        });
+      });
+
+      this.dom.requestsTableBody.querySelectorAll('.btn-audit-req').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          this.openAuditModal(id);
+        });
+      });
 
       this.refreshIcons();
     }
 
-    handleTableAction(action, reqId) {
+    renderProviderFleetTable() {
+      if (!this.dom.providerInventoryTableBody) return;
+
+      this.dom.providerInventoryTableBody.innerHTML = this.state.inventory.map(asset => {
+        const isAvailable = asset.availabilityStatus === 'Available';
+        return `
+          <tr>
+            <td><strong class="coordinates-tag">${asset.id.toUpperCase()}</strong></td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-primary);">${asset.title}</div>
+              ${asset.instantDispatchAvailable ? '<span style="font-size: 0.68rem; color: #ea580c;">⚡ Instant Dispatch Enabled</span>' : ''}
+            </td>
+            <td><span class="category-badge-chip">${asset.category}</span></td>
+            <td>${asset.shopName}</td>
+            <td><span style="font-size: 0.78rem; color: var(--text-muted);">${asset.vendorType}</span></td>
+            <td>${asset.location}</td>
+            <td><span class="fulfillment-badge ${asset.fulfillmentType === 'Site Delivery' ? 'fulfillment-delivery' : 'fulfillment-pickup'}">${asset.fulfillmentType}</span></td>
+            <td><strong>₹${asset.pricePerDay.toLocaleString('en-IN')}</strong></td>
+            <td>
+              <button class="status-badge ${isAvailable ? 'approved' : 'pending'} btn-toggle-avail" data-asset-id="${asset.id}" style="cursor: pointer; border: none;">
+                ${asset.availabilityStatus} ↻
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      this.dom.providerInventoryTableBody.querySelectorAll('.btn-toggle-avail').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const assetId = e.currentTarget.getAttribute('data-asset-id');
+          const item = this.state.inventory.find(a => a.id === assetId);
+          if (item) {
+            item.availabilityStatus = item.availabilityStatus === 'Available' ? 'Booked' : 'Available';
+            this.saveInventory();
+            this.renderMarketplaceListings();
+            this.renderProviderDashboard();
+            this.showToast({
+              title: "Availability Toggled",
+              message: `${item.title} is now marked as ${item.availabilityStatus}.`,
+              type: "info"
+            });
+          }
+        });
+      });
+      this.refreshIcons();
+    }
+
+    // --- Provider 3-Way Request Negotiation Engine ---
+    handleAcceptRequest(reqId) {
       const req = this.state.requests.find(r => r.id === reqId);
       if (!req) return;
 
-      if (action === 'accept') {
-        req.status = 'Approved';
-        this.saveRequests();
-        this.renderProviderDashboard();
-        this.showToast({
-          title: 'Booking Accepted',
-          message: `Request ${req.id} for ${req.seekerBusiness} confirmed. Site dispatch notified.`,
-          type: 'success'
-        });
-      } else if (action === 'reject') {
-        req.status = 'Rejected';
-        this.saveRequests();
-        this.renderProviderDashboard();
-        this.showToast({
-          title: 'Request Declined',
-          message: `Request ${req.id} marked as declined.`,
-          type: 'warning'
-        });
-      } else if (action === 'negotiate') {
-        this.openNegotiateModal(req);
+      req.status = 'Approved';
+
+      // Smart calendar lock: Ensure asset calendar is frozen
+      const asset = this.state.inventory.find(a => a.id === req.assetId);
+      if (asset) {
+        asset.availabilityStatus = 'Booked';
+        this.saveInventory();
       }
+
+      this.saveRequests();
+      this.renderRequestsTable();
+      this.renderMarketplaceListings();
+      this.renderProviderFleetTable();
+
+      this.showToast({
+        title: "Request Approved & Calendar Locked",
+        message: `${req.id} confirmed. Security escrow held. Asset calendar frozen against double-booking.`,
+        type: "success"
+      });
     }
 
-    // --- Negotiation Modal ---
-    openNegotiateModal(req) {
-      this.state.activeNegotiatingReq = req;
-      this.dom.negReqId.textContent = `Counter-offer for ${req.id}`;
-      this.dom.negTargetId.value = req.id;
-      this.dom.negCounterPrice.value = Math.round(req.totalAmount * 0.9);
+    handleRejectRequest(reqId) {
+      const req = this.state.requests.find(r => r.id === reqId);
+      if (!req) return;
 
-      this.dom.negDetailsBox.innerHTML = `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
-          <span>Asset:</span> <strong>${req.assetTitle}</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
-          <span>Requester:</span> <strong>${req.seekerBusiness}</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>Current Contract Value:</span> <strong>₹${req.totalAmount.toLocaleString('en-IN')}</strong>
-        </div>
-      `;
+      req.status = 'Rejected';
+
+      // Unfreeze calendar if no other approved request
+      const asset = this.state.inventory.find(a => a.id === req.assetId);
+      if (asset) {
+        asset.availabilityStatus = 'Available';
+        this.saveInventory();
+      }
+
+      this.saveRequests();
+      this.renderRequestsTable();
+      this.renderMarketplaceListings();
+      this.renderProviderFleetTable();
+
+      this.showToast({
+        title: "Booking Rejected",
+        message: `Request ${req.id} declined. Asset returned to available inventory.`,
+        type: "info"
+      });
+    }
+
+    openNegotiateModal(reqId) {
+      const req = this.state.requests.find(r => r.id === reqId);
+      if (!req) return;
+
+      this.state.activeNegotiatingReq = req;
+
+      if (this.dom.negReqId) this.dom.negReqId.textContent = `Counter-Offer Proposal: ${req.id}`;
+      if (this.dom.negTargetId) this.dom.negTargetId.value = req.id;
+
+      if (this.dom.negDetailsBox) {
+        this.dom.negDetailsBox.innerHTML = `
+          <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">${req.assetTitle}</div>
+          <div>Requester: <strong>${req.seekerBusiness}</strong> (${req.seekerContact})</div>
+          <div>Dates: <strong>${req.startDate} to ${req.endDate}</strong> (${req.days} days)</div>
+          <div>Current Contract Value: <strong>₹${req.totalAmount.toLocaleString('en-IN')}</strong></div>
+          <div style="color: var(--text-muted); font-size: 0.78rem; margin-top: 4px;">Notes: ${req.notes || 'No custom notes provided.'}</div>
+        `;
+      }
+
+      if (this.dom.negCounterPrice) {
+        this.dom.negCounterPrice.value = Math.round(req.totalAmount * 0.95);
+      }
+      if (this.dom.negCounterMessage) {
+        this.dom.negCounterMessage.value = "We can accommodate your booking at this counter rate if site setup is scheduled after 2:00 PM.";
+      }
 
       this.openModal(this.dom.negotiateModal);
     }
@@ -1317,124 +1499,298 @@
       const req = this.state.activeNegotiatingReq;
       if (!req) return;
 
-      const counterPrice = parseFloat(this.dom.negCounterPrice.value);
-      const counterMsg = this.dom.negCounterMessage.value;
+      const counterPrice = parseInt(this.dom.negCounterPrice?.value || '0', 10);
+      const counterMsg = this.dom.negCounterMessage?.value || '';
 
       req.status = 'Negotiating';
       req.negotiationOffer = counterPrice;
-      req.notes = `${req.notes} [Counter-Offer Sent: ₹${counterPrice.toLocaleString('en-IN')} - ${counterMsg}]`;
+      req.notes = `Counter-Offer: ₹${counterPrice.toLocaleString('en-IN')} | Terms: ${counterMsg}`;
 
       this.saveRequests();
       this.closeModal(this.dom.negotiateModal);
-      this.renderProviderDashboard();
+      this.renderRequestsTable();
 
       this.showToast({
-        title: 'Counter-Offer Transmitted',
-        message: `Proposed ₹${counterPrice.toLocaleString('en-IN')} to ${req.seekerBusiness}.`,
-        type: 'info'
+        title: "Counter-Offer Dispatched",
+        message: `Counter-offer of ₹${counterPrice.toLocaleString('en-IN')} sent to ${req.seekerBusiness}.`,
+        type: "success"
       });
     }
 
-    // --- Add New Asset Modal (Provider) ---
+    // --- 2-Step Digital Condition Audit & Escrow Modal ---
+    openAuditModal(reqId) {
+      let targetReq = null;
+      if (reqId) {
+        targetReq = this.state.requests.find(r => r.id === reqId);
+      }
+      if (!targetReq) {
+        // Fallback to first active request or sample
+        targetReq = this.state.requests.find(r => r.status === 'Approved') || this.state.requests[0];
+      }
+
+      this.state.activeAuditReq = targetReq;
+      this.state.activeAuditStep = 1;
+
+      if (targetReq) {
+        if (this.dom.auditTargetTitle) this.dom.auditTargetTitle.textContent = targetReq.assetTitle;
+        if (this.dom.auditTargetReq) {
+          this.dom.auditTargetReq.textContent = `Request: ${targetReq.id} • Seeker: ${targetReq.seekerBusiness}`;
+        }
+        if (this.dom.auditTargetStatus) {
+          this.dom.auditTargetStatus.textContent = targetReq.auditStatus || "Pending Dispatch";
+        }
+        if (this.dom.auditEscrowAmount) {
+          this.dom.auditEscrowAmount.textContent = `₹${(targetReq.escrowDeposit || 12500).toLocaleString('en-IN')}`;
+        }
+
+        const asset = this.state.inventory.find(a => a.id === targetReq.assetId);
+        const safeImg = asset ? getSafeImageUrl(asset.image, asset.category) : "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=600&q=80";
+        if (this.dom.auditImgPredispatch) this.dom.auditImgPredispatch.src = safeImg;
+        if (this.dom.auditImgPostreturn) this.dom.auditImgPostreturn.src = safeImg;
+      }
+
+      this.switchAuditStep(1);
+      this.openModal(this.dom.auditModal);
+    }
+
+    switchAuditStep(step) {
+      this.state.activeAuditStep = step;
+      if (step === 1) {
+        this.dom.auditStep1Pill?.classList.add('active');
+        this.dom.auditStep2Pill?.classList.remove('active');
+        if (this.dom.auditViewStep1) this.dom.auditViewStep1.style.display = 'block';
+        if (this.dom.auditViewStep2) this.dom.auditViewStep2.style.display = 'none';
+        if (this.dom.txtSubmitAudit) this.dom.txtSubmitAudit.textContent = "Sign Off Pre-Dispatch";
+        if (this.dom.btnSubmitAudit) this.dom.btnSubmitAudit.style.backgroundColor = "var(--accent-primary)";
+      } else {
+        this.dom.auditStep1Pill?.classList.remove('active');
+        this.dom.auditStep2Pill?.classList.add('active');
+        if (this.dom.auditViewStep1) this.dom.auditViewStep1.style.display = 'none';
+        if (this.dom.auditViewStep2) this.dom.auditViewStep2.style.display = 'block';
+        if (this.dom.txtSubmitAudit) {
+          const deposit = this.state.activeAuditReq?.escrowDeposit || 12500;
+          this.dom.txtSubmitAudit.textContent = `Release Escrow Deposit (₹${deposit.toLocaleString('en-IN')})`;
+        }
+        if (this.dom.btnSubmitAudit) this.dom.btnSubmitAudit.style.backgroundColor = "var(--accent-emerald)";
+      }
+      this.refreshIcons();
+    }
+
+    handleAuditSubmit() {
+      const req = this.state.activeAuditReq;
+      if (this.state.activeAuditStep === 1) {
+        // Step 1 sign-off
+        if (req) {
+          req.auditStatus = "Pre-Pickup Verified";
+          this.saveRequests();
+        }
+        this.showToast({
+          title: "Pre-Dispatch Audit Certified",
+          message: "Photo inspection stamped with GPS signature. Logistics driver cleared for pickup.",
+          type: "success"
+        });
+        this.switchAuditStep(2);
+      } else {
+        // Step 2 sign-off: Escrow release
+        if (req) {
+          req.auditStatus = "Escrow Released & Completed";
+          // Unfreeze asset
+          const asset = this.state.inventory.find(a => a.id === req.assetId);
+          if (asset) {
+            asset.availabilityStatus = "Available";
+            this.saveInventory();
+          }
+          this.saveRequests();
+        }
+        this.closeModal(this.dom.auditModal);
+        this.renderRequestsTable();
+        this.renderMarketplaceListings();
+        this.renderProviderFleetTable();
+        this.showToast({
+          title: "Escrow Deposit Released",
+          message: `₹${(req?.escrowDeposit || 12500).toLocaleString('en-IN')} escrow credited back to Seeker. Asset marked Available.`,
+          type: "success"
+        });
+      }
+    }
+
+    // --- Automated Monetization & ROI Calculator Engine ---
+    updateMonetizationCalculator() {
+      const assets = parseInt(this.dom.sliderAssets?.value || '2', 10);
+      const days = parseInt(this.dom.sliderDays?.value || '12', 10);
+      const rate = parseInt(this.dom.sliderRate?.value || '15000', 10);
+
+      // Update Slider Value Labels
+      if (this.dom.valSliderAssets) this.dom.valSliderAssets.textContent = `${assets} Unit${assets > 1 ? 's' : ''}`;
+      if (this.dom.valSliderDays) this.dom.valSliderDays.textContent = `${days} Days`;
+      if (this.dom.valSliderRate) this.dom.valSliderRate.textContent = `₹${rate.toLocaleString('en-IN')} / day`;
+
+      // Calculations:
+      // Monthly gross = assets * days * rate
+      // Net of 10% platform fee = gross * 0.90
+      const monthlyGross = assets * days * rate;
+      const monthlyNet = Math.round(monthlyGross * 0.90);
+      const annualNet = monthlyNet * 12;
+
+      // Fleet utilization: days / 30
+      const utilization = ((days / 30) * 100).toFixed(1);
+
+      // ROI Payback months (Assuming baseline equipment capex of ₹15,00,000 per commercial unit)
+      const estimatedCapex = assets * 1500000;
+      const paybackMonths = monthlyNet > 0 ? (estimatedCapex / monthlyNet).toFixed(1) : '0';
+
+      if (this.dom.calcMonthlyRev) {
+        this.dom.calcMonthlyRev.textContent = `₹${monthlyNet.toLocaleString('en-IN')}`;
+      }
+      if (this.dom.calcAnnualRev) {
+        if (annualNet >= 100000) {
+          const lakhs = (annualNet / 100000).toFixed(2);
+          this.dom.calcAnnualRev.textContent = `₹${lakhs} Lakhs`;
+        } else {
+          this.dom.calcAnnualRev.textContent = `₹${annualNet.toLocaleString('en-IN')}`;
+        }
+      }
+      if (this.dom.calcUtilization) {
+        this.dom.calcUtilization.textContent = `${utilization}%`;
+      }
+      if (this.dom.calcPayback) {
+        this.dom.calcPayback.textContent = `${paybackMonths} Months`;
+      }
+
+      const listBtn = document.getElementById('btn-calc-list-rate');
+      if (listBtn) {
+        const textSpan = listBtn.querySelector('span');
+        if (textSpan) textSpan.textContent = `List Asset at this Daily Rate (₹${rate.toLocaleString('en-IN')})`;
+      }
+    }
+
+    // --- Add Asset Modal Controller ---
     handleListAssetSubmit(e) {
       e.preventDefault();
-      const title = document.getElementById('asset-name').value;
-      const category = document.getElementById('asset-category').value;
-      const shopName = document.getElementById('asset-shop').value;
-      const vendorType = document.getElementById('asset-vendor-type').value;
-      const location = document.getElementById('asset-location').value;
-      const fulfillment = document.getElementById('asset-fulfillment').value;
-      const rate = parseInt(document.getElementById('asset-rate').value, 10);
-      const status = document.getElementById('asset-status').value;
-      const imgUrl = document.getElementById('asset-image').value;
+
+      const name = this.dom.assetName?.value.trim() || "Commercial Hospitality Asset";
+      const category = this.dom.assetCategory?.value || "Venue";
+      const fulfillment = this.dom.assetFulfillment?.value || "In-Store Pickup";
+      const shop = this.dom.assetShop?.value.trim() || (this.state.currentUser?.businessName || "Hospitality Depot");
+      const vendorType = this.dom.assetVendorType?.value.trim() || "Commercial Partner";
+      const location = this.dom.assetLocation?.value || "Lower Parel, Mumbai";
+      const rate = parseInt(this.dom.assetRate?.value || '15000', 10);
+      const status = this.dom.assetStatus?.value || "Available";
+      const instantDispatch = this.dom.assetInstantDispatch?.checked || false;
+      const imageUrl = getSafeImageUrl(this.dom.assetImage?.value.trim(), category);
+
+      // Location coordinates lookup helper
+      const coordsMap = {
+        "Lower Parel, Mumbai": { lat: 18.9986, lng: 72.8311 },
+        "Andheri East, Mumbai": { lat: 19.1136, lng: 72.8697 },
+        "Dadar West, Mumbai": { lat: 19.0178, lng: 72.8478 },
+        "Ghatkopar West, Mumbai": { lat: 19.0860, lng: 72.9090 },
+        "Majiwada, Thane": { lat: 19.2132, lng: 72.9774 },
+        "Dombivli East, Thane": { lat: 19.2183, lng: 73.0867 },
+        "Kalyan West, Thane": { lat: 19.2437, lng: 73.1355 },
+        "Vashi, Navi Mumbai": { lat: 19.0771, lng: 72.9986 },
+        "Panvel, Navi Mumbai": { lat: 18.9894, lng: 73.1175 },
+        "Bhiwandi Industrial Hub": { lat: 19.2967, lng: 73.0631 },
+        "Anjur Phata, Bhiwandi": { lat: 19.2814, lng: 73.0489 },
+        "Vasai East, Extended MMR": { lat: 19.3919, lng: 72.8397 }
+      };
+
+      const coordinates = coordsMap[location] || MMR_DEPOT_COORDS;
 
       const newAsset = {
-        id: `mmr-${String(this.state.inventory.length + 1).padStart(2, '0')}`,
-        title: title,
+        id: `mmr-${Date.now().toString().slice(-4)}`,
+        title: name,
         category: category,
-        shopName: shopName,
+        shopName: shop,
         vendorType: vendorType,
         location: location,
         fulfillmentType: fulfillment,
         pricePerDay: rate,
         availabilityStatus: status,
-        image: imgUrl || VERIFIED_FALLBACK_IMAGES[category] || VERIFIED_FALLBACK_IMAGES["Venue"]
+        image: imageUrl,
+        coordinates: coordinates,
+        instantDispatchAvailable: instantDispatch
       };
 
       this.state.inventory.unshift(newAsset);
       this.saveInventory();
 
+      this.dom.formListAsset?.reset();
       this.closeModal(this.dom.listAssetModal);
-      this.dom.formListAsset.reset();
 
-      this.showToast({
-        title: 'MMR Asset Listed!',
-        message: `${newAsset.title} is now active in the Seeker Marketplace.`,
-        type: 'success'
-      });
-
-      this.renderCategoryPills();
       this.renderMarketplaceListings();
       this.renderProviderDashboard();
+
+      this.showToast({
+        title: "Asset Published to MMR Grid",
+        message: `${newAsset.title} is now discoverable across the B2B exchange.`,
+        type: "success"
+      });
     }
 
-    // --- Quick View Modal ---
+    // --- Quick View Modal Controller ---
     openQuickViewModal(assetId) {
-      const asset = this.state.inventory.find(item => item.id === assetId);
+      const asset = this.state.inventory.find(a => a.id === assetId);
       if (!asset) return;
 
       this.state.activeModalAsset = asset;
-      this.dom.qvTitle.textContent = asset.title;
+      const coords = asset.coordinates || MMR_DEPOT_COORDS;
+      const distance = calculateDistanceKm(MMR_DEPOT_COORDS.lat, MMR_DEPOT_COORDS.lng, coords.lat, coords.lng);
 
-      const safeImageUrl = getSafeImageUrl(asset.image, asset.category);
+      if (this.dom.qvTitle) this.dom.qvTitle.textContent = asset.title;
 
-      this.dom.qvContent.innerHTML = `
-        <div style="border-radius: 8px; overflow: hidden; aspect-ratio: 16 / 9; margin-bottom: 1rem;">
-          <img 
-            src="${safeImageUrl}" 
-            alt="${asset.title}" 
-            style="width: 100%; height: 100%; object-fit: cover;"
-            onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80';"
-          >
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.75rem;">
-          <div>
-            <span class="brand-badge">${asset.category}</span>
-            <span class="status-badge ${asset.availabilityStatus === 'Available' ? 'approved' : 'pending'}" style="margin-left: 0.5rem;">${asset.availabilityStatus}</span>
+      if (this.dom.qvContent) {
+        this.dom.qvContent.innerHTML = `
+          <div style="margin-bottom: 1rem; border-radius: var(--radius-md); overflow: hidden; max-height: 240px;">
+            <img 
+              src="${getSafeImageUrl(asset.image, asset.category)}" 
+              alt="${asset.title}" 
+              style="width: 100%; height: 240px; object-fit: cover;"
+              onerror="this.src='https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80'"
+            >
           </div>
-          <div style="text-align: right;">
-            <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">₹${asset.pricePerDay.toLocaleString('en-IN')}</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">per calendar day (${asset.fulfillmentType})</div>
-          </div>
-        </div>
 
-        <div style="background-color: var(--bg-secondary); padding: 0.9rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
-          <h4 style="font-size: 0.85rem; margin-bottom: 0.35rem; color: var(--text-primary);">MMR Vendor &amp; Facility</h4>
-          <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">${asset.shopName}</div>
-          <div style="font-size: 0.78rem; color: var(--accent-primary); font-weight: 600;">${asset.vendorType}</div>
-        </div>
-
-        <div style="border: 1px solid var(--border-subtle); padding: 0.9rem; border-radius: var(--radius-md);">
-          <h4 style="font-size: 0.85rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
-            <i data-lucide="map-pin" style="width: 1rem; height: 1rem; color: var(--accent-rose);"></i>
-            <span>MMR Operational Location</span>
-          </h4>
-          <div style="font-size: 0.88rem; color: var(--text-primary); font-weight: 600;">${asset.location}</div>
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.6rem; align-items: center;">
-            <span class="fulfillment-badge ${asset.fulfillmentType === 'Site Delivery' ? 'fulfillment-delivery' : 'fulfillment-pickup'}">
-              ${asset.fulfillmentType}
-            </span>
-            <span class="coordinates-tag">Asset ID: ${asset.id.toUpperCase()}</span>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.75rem;">
+            <div>
+              <span class="category-badge-chip">${asset.category}</span>
+              <span class="status-badge ${asset.availabilityStatus === 'Available' ? 'approved' : 'pending'}" style="margin-left: 0.5rem;">
+                ${asset.availabilityStatus}
+              </span>
+              ${asset.instantDispatchAvailable ? '<span class="instant-dispatch-badge" style="margin-left: 0.4rem;">⚡ 30-60 Min Dispatch</span>' : ''}
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">₹${asset.pricePerDay.toLocaleString('en-IN')}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">per calendar day</div>
+            </div>
           </div>
-        </div>
-      `;
+
+          <div style="background-color: var(--bg-secondary); padding: 0.9rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+            <h4 style="font-size: 0.82rem; margin-bottom: 0.35rem; color: var(--text-primary);">MMR Host Enterprise</h4>
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary);">${asset.shopName}</div>
+            <div style="font-size: 0.78rem; color: var(--accent-primary); font-weight: 600;">${asset.vendorType}</div>
+          </div>
+
+          <div style="border: 1px solid var(--border-subtle); padding: 0.9rem; border-radius: var(--radius-md);">
+            <h4 style="font-size: 0.82rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+              <i data-lucide="map-pin" style="width: 1rem; height: 1rem; color: var(--accent-rose);"></i>
+              <span>MMR Hub Location &amp; Proximity</span>
+            </h4>
+            <div style="font-size: 0.88rem; color: var(--text-primary); font-weight: 600;">${asset.location}</div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.6rem; align-items: center; flex-wrap: wrap;">
+              <span class="fulfillment-badge ${asset.fulfillmentType === 'Site Delivery' ? 'fulfillment-delivery' : 'fulfillment-pickup'}">
+                ${asset.fulfillmentType}
+              </span>
+              <span class="proximity-tag">📍 ${distance} km from BKC</span>
+              <span class="coordinates-tag">ID: ${asset.id.toUpperCase()}</span>
+            </div>
+          </div>
+        `;
+      }
 
       this.openModal(this.dom.quickviewModal);
-      this.refreshIcons();
     }
 
-    // --- Modal Helpers ---
+    // --- Generic Modal Helpers ---
     openModal(modalEl) {
       if (!modalEl) return;
       modalEl.classList.add('active');
@@ -1450,7 +1806,7 @@
       document.body.style.overflow = '';
     }
 
-    // --- Toast Notification Engine ---
+    // --- Floating Toast Notifications ---
     showToast({ title, message, type = 'info' }) {
       if (!this.dom.toastContainer) return;
       const toast = document.createElement('div');

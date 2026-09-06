@@ -143,6 +143,20 @@
             >
           </div>
 
+          <!-- ⚡ Emergency / Instant Dispatch Mode Toggle Button -->
+          <button type="button" class="btn-emergency-toggle" id="btn-emergency-toggle" title="Toggle Emergency 30-60 Min Dispatch">
+            <i data-lucide="zap" style="width: 1rem; height: 1rem;"></i>
+            <span>⚡ Emergency Mode (30-60 Min)</span>
+          </button>
+
+          <!-- Proximity Radius Filter -->
+          <select class="filter-select" id="filter-radius" aria-label="Filter by Proximity Radius">
+            <option value="all">All MMR (Any Distance)</option>
+            <option value="5">📍 Within 5 km Radius</option>
+            <option value="10">📍 Within 10 km Radius</option>
+            <option value="15">📍 Within 15 km Radius</option>
+          </select>
+
           <!-- MMR Location Filter -->
           <select class="filter-select" id="filter-location" aria-label="Filter by MMR Location">
             <option value="all">All MMR Locations</option>
@@ -151,7 +165,6 @@
             <option value="Navi Mumbai">Navi Mumbai</option>
             <option value="Bhiwandi">Bhiwandi</option>
             <option value="Kalyan">Kalyan</option>
-            <option value="Dombivli">Dombivli</option>
             <option value="Vasai">Vasai</option>
           </select>
 
@@ -159,9 +172,9 @@
           <select class="filter-select" id="filter-category" aria-label="Filter by Category">
             <option value="all">All Categories</option>
             <option value="Venue">Venue (Venues &amp; Banquets)</option>
-            <option value="Commercial Kitchen">Commercial Kitchen</option>
-            <option value="Logistics Vehicle">Logistics Vehicle</option>
-            <option value="Event Equipment">Event Equipment</option>
+            <option value="Kitchen">Commercial Kitchen</option>
+            <option value="Vehicle">Logistics Vehicle</option>
+            <option value="Equipment">Event Equipment</option>
           </select>
 
           <!-- Price Range Filter -->
@@ -270,16 +283,97 @@
         </div>
       </div>
 
+      <!-- ================= Automated Revenue & Monetization Calculator Tool ================= -->
+      <div class="monetization-calc-card">
+        <div class="section-title-wrap">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="calculator" style="width: 1.3rem; height: 1.3rem; color: var(--accent-primary);"></i>
+            <h2 style="font-size: 1.25rem;">Automated Hospitality Monetization &amp; ROI Calculator</h2>
+          </div>
+          <p>Simulate projected monthly and annual earnings by monetizing idle commercial hospitality infrastructure in the MMR network.</p>
+        </div>
+
+        <!-- Interactive Range Sliders -->
+        <div class="calc-sliders-grid">
+          <!-- Slider 1: Fleet Assets Available -->
+          <div class="calc-slider-group">
+            <div class="calc-slider-label">
+              <span>Idle Assets in Fleet:</span>
+              <span class="calc-slider-val" id="val-slider-assets">2 Units</span>
+            </div>
+            <input type="range" id="slider-assets" class="calc-range-slider" min="1" max="10" value="2" step="1">
+            <span style="font-size: 0.7rem; color: var(--text-muted);">Capacity available for B2B sharing</span>
+          </div>
+
+          <!-- Slider 2: Idle Days Rented per Month -->
+          <div class="calc-slider-group">
+            <div class="calc-slider-label">
+              <span>Rented Days / Month:</span>
+              <span class="calc-slider-val" id="val-slider-days">12 Days</span>
+            </div>
+            <input type="range" id="slider-days" class="calc-range-slider" min="1" max="30" value="12" step="1">
+            <span style="font-size: 0.7rem; color: var(--text-muted);">Estimated deployment duration</span>
+          </div>
+
+          <!-- Slider 3: Average Daily Rental Rate -->
+          <div class="calc-slider-group">
+            <div class="calc-slider-label">
+              <span>Average Daily Rate (₹):</span>
+              <span class="calc-slider-val" id="val-slider-rate">₹15,000 / day</span>
+            </div>
+            <input type="range" id="slider-rate" class="calc-range-slider" min="1000" max="50000" value="15000" step="500">
+            <span style="font-size: 0.7rem; color: var(--text-muted);">B2B market contract benchmark</span>
+          </div>
+        </div>
+
+        <!-- Live Projection Cards -->
+        <div class="calc-projection-grid">
+          <div class="calc-projection-item">
+            <span class="calc-projection-title">Projected Monthly Net</span>
+            <span class="calc-projection-amount" id="calc-monthly-rev">₹3,24,000</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Net of 10% platform fee</span>
+          </div>
+          <div class="calc-projection-item">
+            <span class="calc-projection-title">Projected Annual Revenue</span>
+            <span class="calc-projection-amount" id="calc-annual-rev">₹38.88 Lakhs</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Annualized yield</span>
+          </div>
+          <div class="calc-projection-item">
+            <span class="calc-projection-title">Asset Fleet Utilization</span>
+            <span class="calc-projection-amount roi" id="calc-utilization">40.0%</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">12 days of 30 days active</span>
+          </div>
+          <div class="calc-projection-item">
+            <span class="calc-projection-title">Estimated ROI Payback</span>
+            <span class="calc-projection-amount roi" id="calc-payback">4.6 Months</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Capex breakeven timeline</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="button" class="btn-primary-action" id="btn-calc-list-rate">
+            <i data-lucide="plus-circle" style="width: 1rem; height: 1rem;"></i>
+            <span>List Asset at this Daily Rate (₹15,000)</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Dashboard Action Bar -->
       <div class="dashboard-actions-bar">
         <div class="section-title-wrap">
           <h2>Enterprise Rental Requests Management</h2>
-          <p>Review, accept, negotiate, or decline incoming B2B rental bookings in real time.</p>
+          <p>Review incoming requests, send counter-offers, freeze calendars, and settle escrow deposits.</p>
         </div>
-        <button class="btn-primary-action" id="btn-open-list-modal">
-          <i data-lucide="plus-circle" style="width: 1.1rem; height: 1.1rem;"></i>
-          <span>List New Asset</span>
-        </button>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="reset-filters-btn" id="btn-open-audit-modal" style="background-color: var(--card-bg); border-color: var(--border-strong); display: inline-flex; align-items: center; gap: 0.45rem;">
+            <i data-lucide="clipboard-check" style="width: 1rem; height: 1rem; color: var(--accent-emerald);"></i>
+            <span>2-Step Condition Audit &amp; Escrow</span>
+          </button>
+          <button class="btn-primary-action" id="btn-open-list-modal">
+            <i data-lucide="plus-circle" style="width: 1.1rem; height: 1.1rem;"></i>
+            <span>List New Asset</span>
+          </button>
+        </div>
       </div>
 
       <!-- Rental Requests Enterprise Table -->
@@ -295,9 +389,9 @@
                 <th>Request ID</th>
                 <th>Asset Title</th>
                 <th>Requester Business</th>
-                <th>Duration &amp; Dates</th>
+                <th>Mode / Dates</th>
                 <th>Contract Value</th>
-                <th>Fulfillment</th>
+                <th>Escrow &amp; 3PL</th>
                 <th>Status</th>
                 <th style="text-align: right;">Actions</th>
               </tr>
@@ -453,6 +547,18 @@
       <form id="form-rental" class="modal-body">
         <input type="hidden" id="rental-asset-id">
 
+        <!-- Dual Booking Mode Selector -->
+        <div class="booking-mode-bar">
+          <button type="button" class="booking-mode-btn active" id="btn-mode-planned">
+            <span>📅 Planned Advance Booking</span>
+            <span class="mode-subtext">Lock Dates with 20% Token</span>
+          </button>
+          <button type="button" class="booking-mode-btn" id="btn-mode-emergency">
+            <span>⚡ Emergency Instant Dispatch</span>
+            <span class="mode-subtext">30–60 Min Fast-Track</span>
+          </button>
+        </div>
+
         <!-- Selected Asset Info Card -->
         <div id="rental-asset-summary" style="padding: 0.85rem; background-color: var(--bg-secondary); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; gap: 0.85rem; align-items: center;">
           <!-- Injected on trigger -->
@@ -470,15 +576,53 @@
           </div>
         </div>
 
-        <!-- Fulfillment & Site Logistics -->
-        <div class="form-group">
-          <label class="form-label" for="rental-delivery-address">Event Site / Delivery Address</label>
-          <input type="text" id="rental-delivery-address" class="form-input" placeholder="e.g. Grand Ballroom, JW Marriott Sahar, Mumbai" required>
+        <!-- 3PL Logistics Selector & Distance Simulator -->
+        <div class="logistics-simulator-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 0.85rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
+              <i data-lucide="truck" style="width: 1rem; height: 1rem; color: var(--accent-primary);"></i>
+              <span>3PL Logistics &amp; Transport Mode</span>
+            </strong>
+            <span style="font-size: 0.75rem; color: var(--text-muted);" id="sim-distance-km">📍 6.8 km from BKC Origin</span>
+          </div>
+
+          <div class="form-row-2" style="margin-top: 0.25rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.84rem; cursor: pointer; padding: 0.5rem; background: var(--card-bg); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <input type="radio" name="logistics-type" id="radio-pickup" value="pickup">
+              <span>In-Store Pickup (Free)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.84rem; cursor: pointer; padding: 0.5rem; background: var(--card-bg); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <input type="radio" name="logistics-type" id="radio-delivery" value="delivery" checked>
+              <span>Site Delivery (3PL Porter/Borzo)</span>
+            </label>
+          </div>
+
+          <div id="delivery-options-box" style="display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.35rem; border-top: 1px dashed var(--border-strong);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+              <span>Simulated 3PL Fare (Base ₹350 + ₹25/km):</span>
+              <strong id="sim-delivery-rate">₹520</strong>
+            </div>
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
+              <input type="checkbox" id="chk-roundtrip" checked style="accent-color: var(--accent-emerald);">
+              <span>Add Return Leg Logistics (Round-Trip)</span>
+              <span class="logistics-discount-pill">20% OFF Return</span>
+            </label>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="rental-notes">Operational Notes / Special Requirements</label>
-          <textarea id="rental-notes" class="form-textarea" placeholder="e.g. 3-Phase power available at site. Early 6:00 AM delivery needed."></textarea>
+        <!-- Site Delivery Address -->
+        <div class="form-group" id="delivery-address-group">
+          <label class="form-label" for="rental-delivery-address">Event Site / Delivery Address</label>
+          <input type="text" id="rental-delivery-address" class="form-input" placeholder="e.g. Jio World Convention Centre, Hall 3, BKC, Mumbai" required>
+        </div>
+
+        <!-- Escrow Notice Card -->
+        <div class="escrow-notice-card">
+          <i data-lucide="shield-check" style="width: 1.25rem; height: 1.25rem; color: var(--accent-emerald); flex-shrink: 0; margin-top: 2px;"></i>
+          <div>
+            <strong>HospitaLink Platform Escrow Protection:</strong>
+            <div style="margin-top: 2px;">Your security deposit is locked safely in platform escrow. It is released back automatically after the 2-step digital condition audit post-return.</div>
+          </div>
         </div>
 
         <!-- Live Instant Calculation Card -->
@@ -488,23 +632,23 @@
             <strong id="calc-duration">1 Day</strong>
           </div>
           <div class="calc-row">
-            <span>Daily Rate:</span>
-            <span id="calc-daily-rate">₹0 / day</span>
-          </div>
-          <div class="calc-row">
-            <span>Base Rental Subtotal:</span>
+            <span>Base Daily Rental Subtotal:</span>
             <strong id="calc-subtotal">₹0</strong>
           </div>
           <div class="calc-row">
-            <span>B2B Platform Logistics &amp; Transit Insurance (5%):</span>
-            <span id="calc-platform-fee">₹0</span>
+            <span>3PL Logistics Fare:</span>
+            <span id="calc-logistics-fee">₹520</span>
+          </div>
+          <div class="calc-row" id="row-token-amount" style="color: var(--accent-primary); font-weight: 700;">
+            <span>20% Token Amount to Lock Date:</span>
+            <strong id="calc-token-amount">₹0</strong>
           </div>
           <div class="calc-row">
-            <span>Refundable Security Deposit:</span>
+            <span>Platform Escrow Deposit:</span>
             <span id="calc-deposit" class="security-deposit-badge">₹0 (Refundable)</span>
           </div>
           <div class="calc-row grand-total">
-            <span>Estimated Total Contract:</span>
+            <span>Total Estimated Contract:</span>
             <span id="calc-grand-total" style="color: var(--accent-primary);">₹0</span>
           </div>
         </div>
@@ -512,8 +656,8 @@
         <div class="modal-footer" style="padding: 0; background: transparent; border: none; margin-top: 0.5rem;">
           <button type="button" class="reset-filters-btn" id="btn-cancel-rental">Cancel</button>
           <button type="submit" class="btn-primary-action" id="btn-submit-rental">
-            <i data-lucide="check-circle-2" style="width: 1rem; height: 1rem;"></i>
-            <span>Confirm &amp; Transmit Request</span>
+            <i data-lucide="lock" style="width: 1rem; height: 1rem;"></i>
+            <span id="btn-submit-rental-text">Lock Date with 20% Token</span>
           </button>
         </div>
       </form>
@@ -589,12 +733,21 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="asset-status">Availability Status</label>
-          <select id="asset-status" class="form-select" required>
-            <option value="Available">Available</option>
-            <option value="Booked">Booked</option>
-          </select>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="asset-status">Availability Status</label>
+            <select id="asset-status" class="form-select" required>
+              <option value="Available">Available</option>
+              <option value="Booked">Booked</option>
+            </select>
+          </div>
+          <div class="form-group" style="justify-content: center;">
+            <label class="form-label">⚡ Instant Dispatch (30-60 Min)</label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; margin-top: 0.4rem;">
+              <input type="checkbox" id="asset-instant-dispatch" style="width: 1.1rem; height: 1.1rem; accent-color: #ea580c;">
+              <span>Enable ⚡ Emergency Instant Dispatch</span>
+            </label>
+          </div>
         </div>
 
         <div class="form-group">
@@ -603,7 +756,7 @@
           <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; flex-wrap: wrap;">
             <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80">Venue Preset</button>
             <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80">Kitchen Preset</button>
-            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80">Logistics Preset</button>
+            <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80">Vehicle Preset</button>
             <button type="button" class="demo-quick-btn preset-img-btn" data-url="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80">Equipment Preset</button>
           </div>
         </div>
@@ -676,6 +829,126 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 6. 2-Step Digital Condition Audit Modal -->
+  <div class="modal-backdrop" id="audit-modal" aria-hidden="true">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">2-Step Digital Condition Audit &amp; Escrow</div>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Pre-Pickup &amp; Post-Return Image Inspection</span>
+        </div>
+        <button class="modal-close-btn" id="btn-close-audit" aria-label="Close modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Step Pills -->
+        <div class="audit-step-bar">
+          <div class="audit-step-pill active" id="audit-step-1-pill">
+            <div class="audit-step-num">1</div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.85rem;">Pre-Dispatch Verification</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Before leaving provider hub</div>
+            </div>
+          </div>
+          <div class="audit-step-pill" id="audit-step-2-pill">
+            <div class="audit-step-num">2</div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.85rem;">Post-Return &amp; Escrow Release</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">After venue return completion</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Audit Target Info -->
+        <div id="audit-asset-info" style="padding: 0.75rem; background-color: var(--bg-secondary); border-radius: var(--radius-md); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong id="audit-target-title">500-Seater Banquet &amp; Outdoor Lawn</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted);" id="audit-target-req">Request: REQ-8091 • Seeker: Taj Lands End Banquets</div>
+          </div>
+          <span class="status-badge approved" id="audit-target-status">Audit Active</span>
+        </div>
+
+        <!-- Step 1: Pre-Dispatch Checklist & Photo -->
+        <div id="audit-view-step1">
+          <div class="audit-checklist">
+            <div style="font-weight: 700; font-size: 0.82rem; margin-bottom: 0.2rem;">Pre-Dispatch Quality Checklist:</div>
+            <label class="audit-check-item">
+              <input type="checkbox" checked id="chk-audit-1">
+              <span>Physical exterior clean, no deep dents or structural fractures</span>
+            </label>
+            <label class="audit-check-item">
+              <input type="checkbox" checked id="chk-audit-2">
+              <span>Operational testing completed &amp; factory power cables attached</span>
+            </label>
+            <label class="audit-check-item">
+              <input type="checkbox" checked id="chk-audit-3">
+              <span>Sanitization seal &amp; food-grade hygiene inspection verified</span>
+            </label>
+          </div>
+
+          <div class="photo-audit-grid">
+            <div class="photo-audit-card">
+              <img id="audit-img-predispatch" src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=600&q=80" alt="Pre-Dispatch Photo">
+              <div class="photo-audit-meta">
+                <span>Pre-Dispatch Verification</span>
+                <span style="color: var(--accent-emerald); font-weight: 700;">✓ Timestamped</span>
+              </div>
+            </div>
+            <div class="photo-audit-card" style="border: 1px dashed var(--border-strong); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; text-align: center;">
+              <i data-lucide="camera" style="width: 1.8rem; height: 1.8rem; color: var(--text-muted); margin-bottom: 0.4rem;"></i>
+              <span style="font-size: 0.78rem; font-weight: 600;">Upload Additional Angle</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">JPG, PNG up to 10MB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Post-Return Checklist & Escrow Settlement -->
+        <div id="audit-view-step2" style="display: none;">
+          <div class="audit-checklist">
+            <div style="font-weight: 700; font-size: 0.82rem; margin-bottom: 0.2rem;">Post-Return Inspection Checklist:</div>
+            <label class="audit-check-item">
+              <input type="checkbox" checked id="chk-audit-4">
+              <span>Returned unit tested functional with no missing components</span>
+            </label>
+            <label class="audit-check-item">
+              <input type="checkbox" checked id="chk-audit-5">
+              <span>Zero post-event transit damages or electrical defects</span>
+            </label>
+            <label class="audit-check-item">
+              <input type="checkbox" checked id="chk-audit-6">
+              <span>Escrow deposit release authorized for Seeker account</span>
+            </label>
+          </div>
+
+          <div class="photo-audit-grid">
+            <div class="photo-audit-card">
+              <img id="audit-img-postreturn" src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=600&q=80" alt="Post-Return Photo">
+              <div class="photo-audit-meta">
+                <span>Return Inspection Photo</span>
+                <span style="color: var(--accent-emerald); font-weight: 700;">✓ Passed</span>
+              </div>
+            </div>
+            <div class="escrow-notice-card" style="margin: 0;">
+              <i data-lucide="shield-check" style="width: 1.2rem; height: 1.2rem; color: var(--accent-emerald); flex-shrink: 0;"></i>
+              <div>
+                <strong>Escrow Deposit Release: <span id="audit-escrow-amount">₹12,500</span></strong>
+                <div style="font-size: 0.75rem;">Upon provider sign-off, the 100% refundable deposit is credited back immediately.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="reset-filters-btn" id="btn-cancel-audit">Close</button>
+        <button type="button" class="btn-primary-action" id="btn-submit-audit" style="background-color: var(--accent-emerald);">
+          <i data-lucide="shield-check" style="width: 1rem; height: 1rem;"></i>
+          <span id="txt-submit-audit">Sign Off Pre-Dispatch</span>
+        </button>
+      </div>
     </div>
   </div>
 
